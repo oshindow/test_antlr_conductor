@@ -1,30 +1,34 @@
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
 import { CharStream, CommonTokenStream, AbstractParseTreeVisitor } from 'antlr4ng';
-import { SimpleLangLexer } from './parser/src/SimpleLangLexer';
-import { ExpressionContext, ProgContext, SimpleLangParser } from './parser/src/SimpleLangParser';
-import { SimpleLangVisitor } from './parser/src/SimpleLangVisitor';
+import { rustLexer } from './parser/rustLexer';
+import { Expr_stmtContext, ProgramContext, rustParser } from './parser/rustParser';
+import { rustParserVisitor } from './parser/rustParserVisitor';
 
-class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implements SimpleLangVisitor<number> {
-    // Visit a parse tree produced by SimpleLangParser#prog
-    visitProg(ctx: ProgContext): number {
-        return this.visit(ctx.expression());
+class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implements rustParserVisitor<number> {
+    // Visit a parse tree produced by rustParser#prog
+    visitProgram(ctx: ProgramContext): number {
+        let result = 0;
+        for (const stmt of ctx.stmt()) {
+            result = this.visit(stmt);
+        }
+        return result;
     }
 
-    // Visit a parse tree produced by SimpleLangParser#expression
-    visitExpression(ctx: ExpressionContext): number {
+    // Visit a parse tree produced by rustParser#expression
+    visitExpression(ctx: Expr_stmtContext): number {
         if (ctx.getChildCount() === 1) {
             // INT case
             return parseInt(ctx.getText());
         } else if (ctx.getChildCount() === 3) {
             if (ctx.getChild(0).getText() === '(' && ctx.getChild(2).getText() === ')') {
                 // Parenthesized expression
-                return this.visit(ctx.getChild(1) as ExpressionContext);
+                return this.visit(ctx.getChild(1) as Expr_stmtContext);
             } else {
                 // Binary operation
-                const left = this.visit(ctx.getChild(0) as ExpressionContext);
+                const left = this.visit(ctx.getChild(0) as Expr_stmtContext);
                 const op = ctx.getChild(1).getText();
-                const right = this.visit(ctx.getChild(2) as ExpressionContext);
+                const right = this.visit(ctx.getChild(2) as Expr_stmtContext);
 
                 switch (op) {
                     case '+': return left + right;
@@ -70,12 +74,12 @@ export class SimpleLangEvaluator extends BasicEvaluator {
         try {
             // Create the lexer and parser
             const inputStream = CharStream.fromString(chunk);
-            const lexer = new SimpleLangLexer(inputStream);
+            const lexer = new rustLexer(inputStream);
             const tokenStream = new CommonTokenStream(lexer);
-            const parser = new SimpleLangParser(tokenStream);
+            const parser = new rustParser(tokenStream);
             
             // Parse the input
-            const tree = parser.prog();
+            const tree = parser.program();
             
             // Evaluate the parsed tree
             const result = this.visitor.visit(tree);
