@@ -1,6 +1,6 @@
 import { CharStream, CommonTokenStream } from 'antlr4ng';
-import { SimpleLangLexer } from './parser/src/SimpleLangLexer';
-import { SimpleLangParser } from './parser/src/SimpleLangParser';
+import { rustLexer } from './parser/rustLexer';
+import { rustParser } from './parser/rustParser';
 
 const input = `
     let mut x: i32 = 5;
@@ -10,9 +10,9 @@ const input = `
 `;
 
 const inputStream = CharStream.fromString(input);
-const lexer = new SimpleLangLexer(inputStream);
+const lexer = new rustLexer(inputStream);
 const tokenStream = new CommonTokenStream(lexer);
-const parser = new SimpleLangParser(tokenStream);
+const parser = new rustParser(tokenStream);
 
 const tree = parser.program();
 console.log(tree.toStringTree(parser));

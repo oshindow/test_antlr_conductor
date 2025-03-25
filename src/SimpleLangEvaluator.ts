@@ -80,7 +80,7 @@ export class SimpleLangEvaluator extends BasicEvaluator {
             
             // Parse the input
             const tree = parser.program();
-            
+            this.conductor.sendOutput(`tree: ${tree}`);
             // Evaluate the parsed tree
             const result = this.visitor.visit(tree);
             
