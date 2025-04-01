@@ -4,6 +4,10 @@
 https://oshindow.github.io/test_antlr_conductor/index.js
 
 
+# useful resources
+
+https://www.antlr-ng.org/documentation/grammars/lexer-rules
+
 ## starting point:
 Refer to Sam's repository: https://github.com/tsammeow/conductor-runner-example
 I have forked it and made some configuartion changes to make it work with ANTLR.

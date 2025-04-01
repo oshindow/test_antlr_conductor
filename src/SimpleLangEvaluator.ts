@@ -3,7 +3,7 @@ import { rustLexer } from "./parser/rustLexer";
 import {
     rustParser, 
     type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
-    type DivideContext, type SubtractContext
+    type DivideContext, type SubtractContext, type ExpressionContext
 } from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
@@ -43,6 +43,40 @@ class MyVisitor extends rustVisitor<number> {
     public visitParenExpr = (ctx: ParenExprContext): number => {
         return this.visit(ctx.getChild(1))!;
     }
+
+    public visitExpression(ctx: ExpressionContext): number {
+
+        if (ctx.getChildCount() === 1) {
+            // INT case
+            return parseInt(ctx.getText());
+        } else if (ctx.getChildCount() === 3) {
+            if (ctx.getChild(0).getText() === '(' && ctx.getChild(2).getText() === ')') {
+                // Parenthesized expression
+                return this.visit(ctx.getChild(1) as ExpressionContext);
+            } else {
+                // Binary operation
+                const left = this.visit(ctx.getChild(0) as ExpressionContext);
+                const op = ctx.getChild(1).getText();
+                const right = this.visit(ctx.getChild(2) as ExpressionContext);
+
+                switch (op) {
+                    case '+': return left + right;
+                    case '-': return left - right;
+                    case '*': return left * right;
+                    case '/':
+                        if (right === 0) {
+                            throw new Error("Division by zero");
+                        }
+                        return left / right;
+                    default:
+                        throw new Error(`Unknown operator: ${op}`);
+                }
+            }
+        }
+        
+        throw new Error(`Invalid expression: ${ctx.getText()}`);
+    }
+
 }
 // const visitor = new MyVisitor();
 // const result = visitor.visit(tree);
