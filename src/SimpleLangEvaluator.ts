@@ -6,7 +6,7 @@ import {
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
 import { rustVisitor } from "./parser/rustVisitor";
-
+import { Trees } from 'antlr4ng';
 // const input = "1 + 2 * 3";
 // const inputStream = CharStream.fromString(input);
 // const lexer = new rustLexer(inputStream);
@@ -56,8 +56,8 @@ export class SimpleLangEvaluator extends BasicEvaluator {
             this.conductor.sendOutput(`Parse the input`);
             const tree = parser.start();
             // this.conductorsendOutput("ruleNames:", rustParser.ruleNames); 
-            // const treeStr = Trees.toStringTree(tree, rustParser.ruleNames);
-            this.conductor.sendOutput(`tree: ${tree}`);
+            const treeStr = Trees.toStringTree(tree, rustParser.ruleNames);
+            this.conductor.sendOutput(`tree: ${treeStr}`);
             // Evaluate the parsed tree
             const result = this.visitor.visit(tree);
             
