@@ -1,8 +1,8 @@
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
-import { CharStream, CommonTokenStream, AbstractParseTreeVisitor } from 'antlr4ng';
+import { CharStream, CommonTokenStream, AbstractParseTreeVisitor, ParseTree } from 'antlr4ng';
 import { rustLexer } from './parser/rustLexer';
-import { Expr_stmtContext, ProgramContext, rustParser } from './parser/rustParser';
+import { Expr_stmtContext, ProgramContext, rustParser, IntExprContext } from './parser/rustParser';
 import { rustParserVisitor } from './parser/rustParserVisitor';
 import { Trees } from 'antlr4ng';
 
@@ -18,7 +18,10 @@ class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implem
         }
         return result;
     }
-    
+    visitIntExpr(ctx: IntExprContext): number {
+        return Number.parseInt(ctx.INT().getText(), 10)
+    }
+
     // Visit a parse tree produced by rustParser#expression
     visitExpr_stmt(ctx: Expr_stmtContext): number {
         console.log("visitExpr_stmt called with:", ctx.getText());
