@@ -43,7 +43,7 @@ expr
     | LPAREN expr RPAREN                         # parenExpr
     | identifier                                  # identExpr
     | literal                                     # literalExpr
-    | INT
+    | INT                                         # intExpr
     ;
 
 ty

@@ -12,6 +12,7 @@ import { For_stmtContext } from "./rustParser.js";
 import { Expr_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
 import { IdentExprContext } from "./rustParser.js";
+import { IntExprContext } from "./rustParser.js";
 import { LiteralExprContext } from "./rustParser.js";
 import { BinaryExprContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
@@ -83,6 +84,13 @@ export class rustParserVisitor<Result> extends AbstractParseTreeVisitor<Result> 
      * @return the visitor result
      */
     visitIdentExpr?: (ctx: IdentExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `intExpr`
+     * labeled alternative in `rustParser.expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIntExpr?: (ctx: IntExprContext) => Result;
     /**
      * Visit a parse tree produced by the `literalExpr`
      * labeled alternative in `rustParser.expr`.

@@ -92,6 +92,7 @@ export class rustParser extends antlr.Parser {
     public static readonly BIN_LITERAL = 78;
     public static readonly NON_KEYWORD_IDENTIFIER = 79;
     public static readonly RAW_IDENTIFIER = 80;
+    public static readonly INT = 81;
     public static readonly RULE_program = 0;
     public static readonly RULE_stmt = 1;
     public static readonly RULE_let_stmt = 2;
@@ -130,7 +131,8 @@ export class rustParser extends antlr.Parser {
         "RARROW", "FATARROW", "POUND", "DOLLAR", "QUESTION", "LCURLYBRACE", 
         "RCURLYBRACE", "LSQUAREBRACKET", "RSQUAREBRACKET", "LPAREN", "RPAREN", 
         "LIFETIME_OR_LABEL", "INTEGER_LITERAL", "DEC_LITERAL", "HEX_LITERAL", 
-        "OCT_LITERAL", "BIN_LITERAL", "NON_KEYWORD_IDENTIFIER", "RAW_IDENTIFIER"
+        "OCT_LITERAL", "BIN_LITERAL", "NON_KEYWORD_IDENTIFIER", "RAW_IDENTIFIER", 
+        "INT"
     ];
     public static readonly ruleNames = [
         "program", "stmt", "let_stmt", "if_stmt", "while_stmt", "for_stmt", 
@@ -161,7 +163,7 @@ export class rustParser extends antlr.Parser {
             this.state = 27;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 777) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1801) !== 0)) {
                 {
                 {
                 this.state = 24;
@@ -211,6 +213,7 @@ export class rustParser extends antlr.Parser {
             case rustParser.INTEGER_LITERAL:
             case rustParser.NON_KEYWORD_IDENTIFIER:
             case rustParser.RAW_IDENTIFIER:
+            case rustParser.INT:
                 this.enterOuterAlt(localContext, 2);
                 {
                 this.state = 35;
@@ -466,7 +469,7 @@ export class rustParser extends antlr.Parser {
             this.state = 82;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 777) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1801) !== 0)) {
                 {
                 {
                 this.state = 79;
@@ -513,7 +516,7 @@ export class rustParser extends antlr.Parser {
             let alternative: number;
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 94;
+            this.state = 95;
             this.errorHandler.sync(this);
             switch (this.tokenStream.LA(1)) {
             case rustParser.LPAREN:
@@ -551,11 +554,20 @@ export class rustParser extends antlr.Parser {
                 this.literal();
                 }
                 break;
+            case rustParser.INT:
+                {
+                localContext = new IntExprContext(localContext);
+                this.context = localContext;
+                previousContext = localContext;
+                this.state = 94;
+                this.match(rustParser.INT);
+                }
+                break;
             default:
                 throw new antlr.NoViableAltException(this);
             }
             this.context!.stop = this.tokenStream.LT(-1);
-            this.state = 101;
+            this.state = 102;
             this.errorHandler.sync(this);
             alternative = this.interpreter.adaptivePredict(this.tokenStream, 9, this.context);
             while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
@@ -568,11 +580,11 @@ export class rustParser extends antlr.Parser {
                     {
                     localContext = new BinaryExprContext(new ExprContext(parentContext, parentState));
                     this.pushNewRecursionContext(localContext, _startState, rustParser.RULE_expr);
-                    this.state = 96;
-                    if (!(this.precpred(this.context, 4))) {
-                        throw this.createFailedPredicateException("this.precpred(this.context, 4)");
-                    }
                     this.state = 97;
+                    if (!(this.precpred(this.context, 5))) {
+                        throw this.createFailedPredicateException("this.precpred(this.context, 5)");
+                    }
+                    this.state = 98;
                     _la = this.tokenStream.LA(1);
                     if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 251658240) !== 0))) {
                     this.errorHandler.recoverInline(this);
@@ -581,12 +593,12 @@ export class rustParser extends antlr.Parser {
                         this.errorHandler.reportMatch(this);
                         this.consume();
                     }
-                    this.state = 98;
-                    this.expr(5);
+                    this.state = 99;
+                    this.expr(6);
                     }
                     }
                 }
-                this.state = 103;
+                this.state = 104;
                 this.errorHandler.sync(this);
                 alternative = this.interpreter.adaptivePredict(this.tokenStream, 9, this.context);
             }
@@ -612,7 +624,7 @@ export class rustParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 104;
+            this.state = 105;
             _la = this.tokenStream.LA(1);
             if(!(_la === 22 || _la === 23)) {
             this.errorHandler.recoverInline(this);
@@ -643,7 +655,7 @@ export class rustParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 106;
+            this.state = 107;
             _la = this.tokenStream.LA(1);
             if(!(_la === 6 || _la === 17 || _la === 74)) {
             this.errorHandler.recoverInline(this);
@@ -674,7 +686,7 @@ export class rustParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 108;
+            this.state = 109;
             _la = this.tokenStream.LA(1);
             if(!(_la === 79 || _la === 80)) {
             this.errorHandler.recoverInline(this);
@@ -709,26 +721,26 @@ export class rustParser extends antlr.Parser {
     private expr_sempred(localContext: ExprContext | null, predIndex: number): boolean {
         switch (predIndex) {
         case 0:
-            return this.precpred(this.context, 4);
+            return this.precpred(this.context, 5);
         }
         return true;
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,80,111,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,81,112,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,1,0,5,0,26,8,0,10,
         0,12,0,29,9,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,42,
         8,1,1,2,1,2,3,2,46,8,2,1,2,1,2,1,2,3,2,51,8,2,1,2,1,2,3,2,55,8,2,
         1,3,1,3,1,3,1,3,1,3,1,3,3,3,63,8,3,3,3,65,8,3,1,4,1,4,1,4,1,4,1,
         5,1,5,1,5,1,5,1,5,1,5,1,6,1,6,1,7,1,7,5,7,81,8,7,10,7,12,7,84,9,
-        7,1,7,1,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,95,8,8,1,8,1,8,1,8,5,8,
-        100,8,8,10,8,12,8,103,9,8,1,9,1,9,1,10,1,10,1,11,1,11,1,11,0,1,16,
-        12,0,2,4,6,8,10,12,14,16,18,20,22,0,4,1,0,24,27,1,0,22,23,3,0,6,
-        6,17,17,74,74,1,0,79,80,112,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,0,0,
-        0,6,56,1,0,0,0,8,66,1,0,0,0,10,70,1,0,0,0,12,76,1,0,0,0,14,78,1,
-        0,0,0,16,94,1,0,0,0,18,104,1,0,0,0,20,106,1,0,0,0,22,108,1,0,0,0,
-        24,26,3,2,1,0,25,24,1,0,0,0,26,29,1,0,0,0,27,25,1,0,0,0,27,28,1,
-        0,0,0,28,30,1,0,0,0,29,27,1,0,0,0,30,31,5,0,0,1,31,1,1,0,0,0,32,
+        7,1,7,1,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,96,8,8,1,8,1,8,1,8,
+        5,8,101,8,8,10,8,12,8,104,9,8,1,9,1,9,1,10,1,10,1,11,1,11,1,11,0,
+        1,16,12,0,2,4,6,8,10,12,14,16,18,20,22,0,4,1,0,24,27,1,0,22,23,3,
+        0,6,6,17,17,74,74,1,0,79,80,114,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,
+        0,0,0,6,56,1,0,0,0,8,66,1,0,0,0,10,70,1,0,0,0,12,76,1,0,0,0,14,78,
+        1,0,0,0,16,95,1,0,0,0,18,105,1,0,0,0,20,107,1,0,0,0,22,109,1,0,0,
+        0,24,26,3,2,1,0,25,24,1,0,0,0,26,29,1,0,0,0,27,25,1,0,0,0,27,28,
+        1,0,0,0,28,30,1,0,0,0,29,27,1,0,0,0,30,31,5,0,0,1,31,1,1,0,0,0,32,
         33,3,4,2,0,33,34,5,59,0,0,34,42,1,0,0,0,35,36,3,12,6,0,36,37,5,59,
         0,0,37,42,1,0,0,0,38,42,3,6,3,0,39,42,3,8,4,0,40,42,3,10,5,0,41,
         32,1,0,0,0,41,35,1,0,0,0,41,38,1,0,0,0,41,39,1,0,0,0,41,40,1,0,0,
@@ -744,12 +756,13 @@ export class rustParser extends antlr.Parser {
         13,1,0,0,0,78,82,5,67,0,0,79,81,3,2,1,0,80,79,1,0,0,0,81,84,1,0,
         0,0,82,80,1,0,0,0,82,83,1,0,0,0,83,85,1,0,0,0,84,82,1,0,0,0,85,86,
         5,68,0,0,86,15,1,0,0,0,87,88,6,8,-1,0,88,89,5,71,0,0,89,90,3,16,
-        8,0,90,91,5,72,0,0,91,95,1,0,0,0,92,95,3,22,11,0,93,95,3,20,10,0,
-        94,87,1,0,0,0,94,92,1,0,0,0,94,93,1,0,0,0,95,101,1,0,0,0,96,97,10,
-        4,0,0,97,98,7,0,0,0,98,100,3,16,8,5,99,96,1,0,0,0,100,103,1,0,0,
-        0,101,99,1,0,0,0,101,102,1,0,0,0,102,17,1,0,0,0,103,101,1,0,0,0,
-        104,105,7,1,0,0,105,19,1,0,0,0,106,107,7,2,0,0,107,21,1,0,0,0,108,
-        109,7,3,0,0,109,23,1,0,0,0,10,27,41,45,50,54,62,64,82,94,101
+        8,0,90,91,5,72,0,0,91,96,1,0,0,0,92,96,3,22,11,0,93,96,3,20,10,0,
+        94,96,5,81,0,0,95,87,1,0,0,0,95,92,1,0,0,0,95,93,1,0,0,0,95,94,1,
+        0,0,0,96,102,1,0,0,0,97,98,10,5,0,0,98,99,7,0,0,0,99,101,3,16,8,
+        6,100,97,1,0,0,0,101,104,1,0,0,0,102,100,1,0,0,0,102,103,1,0,0,0,
+        103,17,1,0,0,0,104,102,1,0,0,0,105,106,7,1,0,0,106,19,1,0,0,0,107,
+        108,7,2,0,0,108,21,1,0,0,0,109,110,7,3,0,0,110,23,1,0,0,0,10,27,
+        41,45,50,54,62,64,82,95,102
     ];
 
     private static __ATN: antlr.ATN;
@@ -1133,6 +1146,32 @@ export class IdentExprContext extends ExprContext {
     public override accept<Result>(visitor: rustParserVisitor<Result>): Result | null {
         if (visitor.visitIdentExpr) {
             return visitor.visitIdentExpr(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+export class IntExprContext extends ExprContext {
+    public constructor(ctx: ExprContext) {
+        super(ctx.parent, ctx.invokingState);
+        super.copyFrom(ctx);
+    }
+    public INT(): antlr.TerminalNode {
+        return this.getToken(rustParser.INT, 0)!;
+    }
+    public override enterRule(listener: rustParserListener): void {
+        if(listener.enterIntExpr) {
+             listener.enterIntExpr(this);
+        }
+    }
+    public override exitRule(listener: rustParserListener): void {
+        if(listener.exitIntExpr) {
+             listener.exitIntExpr(this);
+        }
+    }
+    public override accept<Result>(visitor: rustParserVisitor<Result>): Result | null {
+        if (visitor.visitIntExpr) {
+            return visitor.visitIntExpr(this);
         } else {
             return visitor.visitChildren(this);
         }

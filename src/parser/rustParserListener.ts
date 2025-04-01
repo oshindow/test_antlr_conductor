@@ -12,6 +12,7 @@ import { For_stmtContext } from "./rustParser.js";
 import { Expr_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
 import { IdentExprContext } from "./rustParser.js";
+import { IntExprContext } from "./rustParser.js";
 import { LiteralExprContext } from "./rustParser.js";
 import { BinaryExprContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
@@ -117,6 +118,18 @@ export class rustParserListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitIdentExpr?: (ctx: IdentExprContext) => void;
+    /**
+     * Enter a parse tree produced by the `intExpr`
+     * labeled alternative in `rustParser.expr`.
+     * @param ctx the parse tree
+     */
+    enterIntExpr?: (ctx: IntExprContext) => void;
+    /**
+     * Exit a parse tree produced by the `intExpr`
+     * labeled alternative in `rustParser.expr`.
+     * @param ctx the parse tree
+     */
+    exitIntExpr?: (ctx: IntExprContext) => void;
     /**
      * Enter a parse tree produced by the `literalExpr`
      * labeled alternative in `rustParser.expr`.
