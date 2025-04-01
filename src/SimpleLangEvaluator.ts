@@ -14,9 +14,9 @@ class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implem
         }
         return result;
     }
-
+    
     // Visit a parse tree produced by rustParser#expression
-    visitExpression(ctx: Expr_stmtContext): number {
+    visitExpr_stmt(ctx: Expr_stmtContext): number {
         if (ctx.getChildCount() === 1) {
             // INT case
             return parseInt(ctx.getText());

@@ -1,5 +1,5 @@
 yarn generate-parser
-yarn build
+# yarn build
 git add .
-git commit -m "init"
+git commit -m "test parser"
 git push origin main
