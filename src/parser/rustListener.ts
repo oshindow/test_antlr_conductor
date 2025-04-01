@@ -9,6 +9,7 @@ import { SubtractContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
+import { ParenExprContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 
 
@@ -87,6 +88,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitMultiply?: (ctx: MultiplyContext) => void;
+    /**
+     * Enter a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterParenExpr?: (ctx: ParenExprContext) => void;
+    /**
+     * Exit a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitParenExpr?: (ctx: ParenExprContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.number`.
      * @param ctx the parse tree

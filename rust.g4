@@ -10,6 +10,7 @@ expression:
     | expression '+' expression # add
     | expression '-' expression # subtract
     | number                    # simple
+    | LPAREN expression RPAREN  # parenExpr
 ;
 
 number:
@@ -23,3 +24,6 @@ NUMBER:
 WS:
     [ \t\r\n]+ -> skip
 ;
+
+LPAREN         : '(';
+RPAREN         : ')';

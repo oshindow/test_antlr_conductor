@@ -18,16 +18,18 @@ export class rustParser extends antlr.Parser {
     public static readonly T__3 = 4;
     public static readonly NUMBER = 5;
     public static readonly WS = 6;
+    public static readonly LPAREN = 7;
+    public static readonly RPAREN = 8;
     public static readonly RULE_start = 0;
     public static readonly RULE_expression = 1;
     public static readonly RULE_number = 2;
 
     public static readonly literalNames = [
-        null, "'*'", "'/'", "'+'", "'-'"
+        null, "'*'", "'/'", "'+'", "'-'", null, null, "'('", "')'"
     ];
 
     public static readonly symbolicNames = [
-        null, null, null, null, null, "NUMBER", "WS"
+        null, null, null, null, null, "NUMBER", "WS", "LPAREN", "RPAREN"
     ];
     public static readonly ruleNames = [
         "start", "expression", "number",
@@ -88,18 +90,39 @@ export class rustParser extends antlr.Parser {
             let alternative: number;
             this.enterOuterAlt(localContext, 1);
             {
-            {
-            localContext = new SimpleContext(localContext);
-            this.context = localContext;
-            previousContext = localContext;
+            this.state = 14;
+            this.errorHandler.sync(this);
+            switch (this.tokenStream.LA(1)) {
+            case rustParser.NUMBER:
+                {
+                localContext = new SimpleContext(localContext);
+                this.context = localContext;
+                previousContext = localContext;
 
-            this.state = 9;
-            this.number_();
+                this.state = 9;
+                this.number_();
+                }
+                break;
+            case rustParser.LPAREN:
+                {
+                localContext = new ParenExprContext(localContext);
+                this.context = localContext;
+                previousContext = localContext;
+                this.state = 10;
+                this.match(rustParser.LPAREN);
+                this.state = 11;
+                this.expression(0);
+                this.state = 12;
+                this.match(rustParser.RPAREN);
+                }
+                break;
+            default:
+                throw new antlr.NoViableAltException(this);
             }
             this.context!.stop = this.tokenStream.LT(-1);
-            this.state = 25;
+            this.state = 30;
             this.errorHandler.sync(this);
-            alternative = this.interpreter.adaptivePredict(this.tokenStream, 1, this.context);
+            alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
             while (alternative !== 2 && alternative !== antlr.ATN.INVALID_ALT_NUMBER) {
                 if (alternative === 1) {
                     if (this.parseListeners != null) {
@@ -107,71 +130,71 @@ export class rustParser extends antlr.Parser {
                     }
                     previousContext = localContext;
                     {
-                    this.state = 23;
+                    this.state = 28;
                     this.errorHandler.sync(this);
-                    switch (this.interpreter.adaptivePredict(this.tokenStream, 0, this.context) ) {
+                    switch (this.interpreter.adaptivePredict(this.tokenStream, 1, this.context) ) {
                     case 1:
                         {
                         localContext = new MultiplyContext(new ExpressionContext(parentContext, parentState));
                         this.pushNewRecursionContext(localContext, _startState, rustParser.RULE_expression);
-                        this.state = 11;
-                        if (!(this.precpred(this.context, 5))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 5)");
+                        this.state = 16;
+                        if (!(this.precpred(this.context, 6))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 6)");
                         }
-                        this.state = 12;
+                        this.state = 17;
                         this.match(rustParser.T__0);
-                        this.state = 13;
-                        this.expression(6);
+                        this.state = 18;
+                        this.expression(7);
                         }
                         break;
                     case 2:
                         {
                         localContext = new DivideContext(new ExpressionContext(parentContext, parentState));
                         this.pushNewRecursionContext(localContext, _startState, rustParser.RULE_expression);
-                        this.state = 14;
-                        if (!(this.precpred(this.context, 4))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 4)");
+                        this.state = 19;
+                        if (!(this.precpred(this.context, 5))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 5)");
                         }
-                        this.state = 15;
+                        this.state = 20;
                         this.match(rustParser.T__1);
-                        this.state = 16;
-                        this.expression(5);
+                        this.state = 21;
+                        this.expression(6);
                         }
                         break;
                     case 3:
                         {
                         localContext = new AddContext(new ExpressionContext(parentContext, parentState));
                         this.pushNewRecursionContext(localContext, _startState, rustParser.RULE_expression);
-                        this.state = 17;
-                        if (!(this.precpred(this.context, 3))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 3)");
+                        this.state = 22;
+                        if (!(this.precpred(this.context, 4))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 4)");
                         }
-                        this.state = 18;
+                        this.state = 23;
                         this.match(rustParser.T__2);
-                        this.state = 19;
-                        this.expression(4);
+                        this.state = 24;
+                        this.expression(5);
                         }
                         break;
                     case 4:
                         {
                         localContext = new SubtractContext(new ExpressionContext(parentContext, parentState));
                         this.pushNewRecursionContext(localContext, _startState, rustParser.RULE_expression);
-                        this.state = 20;
-                        if (!(this.precpred(this.context, 2))) {
-                            throw this.createFailedPredicateException("this.precpred(this.context, 2)");
+                        this.state = 25;
+                        if (!(this.precpred(this.context, 3))) {
+                            throw this.createFailedPredicateException("this.precpred(this.context, 3)");
                         }
-                        this.state = 21;
+                        this.state = 26;
                         this.match(rustParser.T__3);
-                        this.state = 22;
-                        this.expression(3);
+                        this.state = 27;
+                        this.expression(4);
                         }
                         break;
                     }
                     }
                 }
-                this.state = 27;
+                this.state = 32;
                 this.errorHandler.sync(this);
-                alternative = this.interpreter.adaptivePredict(this.tokenStream, 1, this.context);
+                alternative = this.interpreter.adaptivePredict(this.tokenStream, 2, this.context);
             }
             }
         }
@@ -194,7 +217,7 @@ export class rustParser extends antlr.Parser {
         try {
             this.enterOuterAlt(localContext, 1);
             {
-            this.state = 28;
+            this.state = 33;
             this.match(rustParser.NUMBER);
             }
         }
@@ -222,28 +245,29 @@ export class rustParser extends antlr.Parser {
     private expression_sempred(localContext: ExpressionContext | null, predIndex: number): boolean {
         switch (predIndex) {
         case 0:
-            return this.precpred(this.context, 5);
+            return this.precpred(this.context, 6);
         case 1:
-            return this.precpred(this.context, 4);
+            return this.precpred(this.context, 5);
         case 2:
-            return this.precpred(this.context, 3);
+            return this.precpred(this.context, 4);
         case 3:
-            return this.precpred(this.context, 2);
+            return this.precpred(this.context, 3);
         }
         return true;
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,6,31,2,0,7,0,2,1,7,1,2,2,7,2,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,24,8,1,10,1,12,1,27,9,1,
-        1,2,1,2,1,2,0,1,2,3,0,2,4,0,0,31,0,6,1,0,0,0,2,8,1,0,0,0,4,28,1,
-        0,0,0,6,7,3,2,1,0,7,1,1,0,0,0,8,9,6,1,-1,0,9,10,3,4,2,0,10,25,1,
-        0,0,0,11,12,10,5,0,0,12,13,5,1,0,0,13,24,3,2,1,6,14,15,10,4,0,0,
-        15,16,5,2,0,0,16,24,3,2,1,5,17,18,10,3,0,0,18,19,5,3,0,0,19,24,3,
-        2,1,4,20,21,10,2,0,0,21,22,5,4,0,0,22,24,3,2,1,3,23,11,1,0,0,0,23,
-        14,1,0,0,0,23,17,1,0,0,0,23,20,1,0,0,0,24,27,1,0,0,0,25,23,1,0,0,
-        0,25,26,1,0,0,0,26,3,1,0,0,0,27,25,1,0,0,0,28,29,5,5,0,0,29,5,1,
-        0,0,0,2,23,25
+        4,1,8,36,2,0,7,0,2,1,7,1,2,2,7,2,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,
+        3,1,15,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5,1,29,
+        8,1,10,1,12,1,32,9,1,1,2,1,2,1,2,0,1,2,3,0,2,4,0,0,37,0,6,1,0,0,
+        0,2,14,1,0,0,0,4,33,1,0,0,0,6,7,3,2,1,0,7,1,1,0,0,0,8,9,6,1,-1,0,
+        9,15,3,4,2,0,10,11,5,7,0,0,11,12,3,2,1,0,12,13,5,8,0,0,13,15,1,0,
+        0,0,14,8,1,0,0,0,14,10,1,0,0,0,15,30,1,0,0,0,16,17,10,6,0,0,17,18,
+        5,1,0,0,18,29,3,2,1,7,19,20,10,5,0,0,20,21,5,2,0,0,21,29,3,2,1,6,
+        22,23,10,4,0,0,23,24,5,3,0,0,24,29,3,2,1,5,25,26,10,3,0,0,26,27,
+        5,4,0,0,27,29,3,2,1,4,28,16,1,0,0,0,28,19,1,0,0,0,28,22,1,0,0,0,
+        28,25,1,0,0,0,29,32,1,0,0,0,30,28,1,0,0,0,30,31,1,0,0,0,31,3,1,0,
+        0,0,32,30,1,0,0,0,33,34,5,5,0,0,34,5,1,0,0,0,3,14,28,30
     ];
 
     private static __ATN: antlr.ATN;
@@ -455,6 +479,38 @@ export class MultiplyContext extends ExpressionContext {
     public override accept<Result>(visitor: rustVisitor<Result>): Result | null {
         if (visitor.visitMultiply) {
             return visitor.visitMultiply(this);
+        } else {
+            return visitor.visitChildren(this);
+        }
+    }
+}
+export class ParenExprContext extends ExpressionContext {
+    public constructor(ctx: ExpressionContext) {
+        super(ctx.parent, ctx.invokingState);
+        super.copyFrom(ctx);
+    }
+    public LPAREN(): antlr.TerminalNode {
+        return this.getToken(rustParser.LPAREN, 0)!;
+    }
+    public expression(): ExpressionContext {
+        return this.getRuleContext(0, ExpressionContext)!;
+    }
+    public RPAREN(): antlr.TerminalNode {
+        return this.getToken(rustParser.RPAREN, 0)!;
+    }
+    public override enterRule(listener: rustListener): void {
+        if(listener.enterParenExpr) {
+             listener.enterParenExpr(this);
+        }
+    }
+    public override exitRule(listener: rustListener): void {
+        if(listener.exitParenExpr) {
+             listener.exitParenExpr(this);
+        }
+    }
+    public override accept<Result>(visitor: rustVisitor<Result>): Result | null {
+        if (visitor.visitParenExpr) {
+            return visitor.visitParenExpr(this);
         } else {
             return visitor.visitChildren(this);
         }
