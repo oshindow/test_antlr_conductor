@@ -119,13 +119,6 @@ OCT_LITERAL: '0o' '_'* OCT_DIGIT (OCT_DIGIT | '_')*;
 
 BIN_LITERAL: '0b' '_'* [01] [01_]*;
 
-FLOAT_LITERAL:
-                        {this.floatLiteralPossible()}? (
-        DEC_LITERAL '.' {this.floatDotPossible()}?
-        | DEC_LITERAL ( '.' DEC_LITERAL)? FLOAT_EXPONENT? FLOAT_SUFFIX?
-    )
-;
-
 // rule itself allow any identifier, but keyword has been matched before
 NON_KEYWORD_IDENTIFIER: XID_Start XID_Continue* | '_' XID_Continue+;
 

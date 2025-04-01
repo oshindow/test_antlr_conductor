@@ -90,9 +90,8 @@ export class rustParser extends antlr.Parser {
     public static readonly HEX_LITERAL = 76;
     public static readonly OCT_LITERAL = 77;
     public static readonly BIN_LITERAL = 78;
-    public static readonly FLOAT_LITERAL = 79;
-    public static readonly NON_KEYWORD_IDENTIFIER = 80;
-    public static readonly RAW_IDENTIFIER = 81;
+    public static readonly NON_KEYWORD_IDENTIFIER = 79;
+    public static readonly RAW_IDENTIFIER = 80;
     public static readonly RULE_program = 0;
     public static readonly RULE_stmt = 1;
     public static readonly RULE_let_stmt = 2;
@@ -131,8 +130,7 @@ export class rustParser extends antlr.Parser {
         "RARROW", "FATARROW", "POUND", "DOLLAR", "QUESTION", "LCURLYBRACE", 
         "RCURLYBRACE", "LSQUAREBRACKET", "RSQUAREBRACKET", "LPAREN", "RPAREN", 
         "LIFETIME_OR_LABEL", "INTEGER_LITERAL", "DEC_LITERAL", "HEX_LITERAL", 
-        "OCT_LITERAL", "BIN_LITERAL", "FLOAT_LITERAL", "NON_KEYWORD_IDENTIFIER", 
-        "RAW_IDENTIFIER"
+        "OCT_LITERAL", "BIN_LITERAL", "NON_KEYWORD_IDENTIFIER", "RAW_IDENTIFIER"
     ];
     public static readonly ruleNames = [
         "program", "stmt", "let_stmt", "if_stmt", "while_stmt", "for_stmt", 
@@ -163,7 +161,7 @@ export class rustParser extends antlr.Parser {
             this.state = 27;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1545) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 777) !== 0)) {
                 {
                 {
                 this.state = 24;
@@ -468,7 +466,7 @@ export class rustParser extends antlr.Parser {
             this.state = 82;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1545) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 777) !== 0)) {
                 {
                 {
                 this.state = 79;
@@ -678,7 +676,7 @@ export class rustParser extends antlr.Parser {
             {
             this.state = 108;
             _la = this.tokenStream.LA(1);
-            if(!(_la === 80 || _la === 81)) {
+            if(!(_la === 79 || _la === 80)) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -717,7 +715,7 @@ export class rustParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,81,111,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,80,111,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,1,0,5,0,26,8,0,10,
         0,12,0,29,9,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,42,
         8,1,1,2,1,2,3,2,46,8,2,1,2,1,2,1,2,3,2,51,8,2,1,2,1,2,3,2,55,8,2,
@@ -726,7 +724,7 @@ export class rustParser extends antlr.Parser {
         7,1,7,1,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,95,8,8,1,8,1,8,1,8,5,8,
         100,8,8,10,8,12,8,103,9,8,1,9,1,9,1,10,1,10,1,11,1,11,1,11,0,1,16,
         12,0,2,4,6,8,10,12,14,16,18,20,22,0,4,1,0,24,27,1,0,22,23,3,0,6,
-        6,17,17,74,74,1,0,80,81,112,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,0,0,
+        6,17,17,74,74,1,0,79,80,112,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,0,0,
         0,6,56,1,0,0,0,8,66,1,0,0,0,10,70,1,0,0,0,12,76,1,0,0,0,14,78,1,
         0,0,0,16,94,1,0,0,0,18,104,1,0,0,0,20,106,1,0,0,0,22,108,1,0,0,0,
         24,26,3,2,1,0,25,24,1,0,0,0,26,29,1,0,0,0,27,25,1,0,0,0,27,28,1,
