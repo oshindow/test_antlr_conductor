@@ -1,80 +1,45 @@
+import { CharStream, CommonTokenStream } from "antlr4ng";
+import { rustLexer } from "./parser/rustLexer";
+import {
+    rustParser, type AddContext, type MultiplyContext, type SimpleContext
+} from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
-import { CharStream, CommonTokenStream, AbstractParseTreeVisitor, ParseTree } from 'antlr4ng';
-import { rustLexer } from './parser/rustLexer';
-import { Expr_stmtContext, ProgramContext, rustParser, IntExprContext } from './parser/rustParser';
-import { rustParserVisitor } from './parser/rustParserVisitor';
-import { Trees } from 'antlr4ng';
+import { rustVisitor } from "./parser/rustVisitor";
 
-class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implements rustParserVisitor<number> {
-    // Visit a parse tree produced by rustParser#prog
-    visitProgram(ctx: ProgramContext): number {
-        console.log("visitProgram called with:", ctx.getText());
-        // this.conductor.sendOutput(`Visiting program: ${ctx.getText()}`);
-        let result = 0;
-        for (const stmt of ctx.stmt()) {
-            // this.conductor.sendOutput(`Visiting stmt: ${stmt.getText()}`);
-            result = this.visit(stmt);
-        }
-        return result;
-    }
-    visitIntExpr(ctx: IntExprContext): number {
-        return Number.parseInt(ctx.INT().getText(), 10)
-    }
+// const input = "1 + 2 * 3";
+// const inputStream = CharStream.fromString(input);
+// const lexer = new rustLexer(inputStream);
+// const tokenStream = new CommonTokenStream(lexer);
+// const parser = new rustParser(tokenStream);
+// const tree = parser.start();
 
-    // Visit a parse tree produced by rustParser#expression
-    visitExpr_stmt(ctx: Expr_stmtContext): number {
-        console.log("visitExpr_stmt called with:", ctx.getText());
-        if (ctx.getChildCount() === 1) {
-            // INT case
-            return parseInt(ctx.getText());
-        } else if (ctx.getChildCount() === 3) {
-            if (ctx.getChild(0).getText() === '(' && ctx.getChild(2).getText() === ')') {
-                // Parenthesized expression
-                return this.visit(ctx.getChild(1) as Expr_stmtContext);
-            } else {
-                // Binary operation
-                const left = this.visit(ctx.getChild(0) as Expr_stmtContext);
-                const op = ctx.getChild(1).getText();
-                const right = this.visit(ctx.getChild(2) as Expr_stmtContext);
+class MyVisitor extends rustVisitor<number> {
+    public visitAdd = (ctx: AddContext): number => {
+        return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
+    };
 
-                switch (op) {
-                    case '+': return left + right;
-                    case '-': return left - right;
-                    case '*': return left * right;
-                    case '/':
-                        if (right === 0) {
-                            throw new Error("Division by zero");
-                        }
-                        return left / right;
-                    default:
-                        throw new Error(`Unknown operator: ${op}`);
-                }
-            }
-        }
-        
-        throw new Error(`Invalid expression: ${ctx.getText()}`);
-    }
+    public visitMultiply = (ctx: MultiplyContext): number => {
+        return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
+    };
 
-    // Override the default result method from AbstractParseTreeVisitor
-    protected defaultResult(): number {
-        return 0;
-    }
-    
-    // Override the aggregate result method
-    protected aggregateResult(aggregate: number, nextResult: number): number {
-        return nextResult;
-    }
+    public visitSimple = (ctx: SimpleContext): number => {
+        return Number.parseInt(ctx.number().NUMBER().getText(), 10);
+    };
 }
+
+// const visitor = new MyVisitor();
+// const result = visitor.visit(tree);
+// console.log(result); // prints "7"
 
 export class SimpleLangEvaluator extends BasicEvaluator {
     private executionCount: number;
-    private visitor: SimpleLangEvaluatorVisitor;
+    private visitor: MyVisitor;
 
     constructor(conductor: IRunnerPlugin) {
         super(conductor);
         this.executionCount = 0;
-        this.visitor = new SimpleLangEvaluatorVisitor();
+        this.visitor = new MyVisitor();
     }
 
     async evaluateChunk(chunk: string): Promise<void> {
@@ -89,7 +54,7 @@ export class SimpleLangEvaluator extends BasicEvaluator {
             
             // Parse the input
             this.conductor.sendOutput(`Parse the input`);
-            const tree = parser.program();
+            const tree = parser.start();
             // this.conductorsendOutput("ruleNames:", rustParser.ruleNames); 
             // const treeStr = Trees.toStringTree(tree, rustParser.ruleNames);
             this.conductor.sendOutput(`tree: ${tree}`);
