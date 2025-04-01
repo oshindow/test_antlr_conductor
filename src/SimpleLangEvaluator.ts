@@ -45,7 +45,7 @@ class MyVisitor extends rustVisitor<number> {
     // }
 
     public visitExpression(ctx: ExpressionContext): number {
-
+        console.log("call visitExpression"); // prints "7"
         if (ctx.getChildCount() === 1) {
             // INT case
             return parseInt(ctx.getText());
