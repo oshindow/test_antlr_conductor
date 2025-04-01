@@ -3,7 +3,8 @@ import { rustLexer } from "./parser/rustLexer";
 import {
     rustParser, 
     type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
-    type DivideContext, type SubtractContext, type ExpressionContext
+    type DivideContext, type SubtractContext, type ExpressionContext,
+    type StartContext
 } from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
@@ -15,6 +16,9 @@ import { Trees } from 'antlr4ng';
 // const tokenStream = new CommonTokenStream(lexer);
 // const parser = new rustParser(tokenStream);
 // const tree = parser.start();
+function display(msg: string): void {
+    alert(msg);
+}
 
 class MyVisitor extends rustVisitor<number> {
     // public visitAdd = (ctx: AddContext): number => {
@@ -43,9 +47,13 @@ class MyVisitor extends rustVisitor<number> {
     // public visitParenExpr = (ctx: ParenExprContext): number => {
     //     return this.visit(ctx.getChild(1))!;
     // }
-
+    visitStart = (ctx: StartContext): number => {
+        display("call visitStart");
+        return this.visit(ctx.expression());
+    }
+    
     public visitExpression(ctx: ExpressionContext): number {
-        console.log("call visitExpression"); // prints "7"
+        display("call visitExpression"); // prints "7"
         if (ctx.getChildCount() === 1) {
             // INT case
             return parseInt(ctx.getText());
