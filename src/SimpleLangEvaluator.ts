@@ -4,12 +4,15 @@ import { CharStream, CommonTokenStream, AbstractParseTreeVisitor } from 'antlr4n
 import { rustLexer } from './parser/rustLexer';
 import { Expr_stmtContext, ProgramContext, rustParser } from './parser/rustParser';
 import { rustParserVisitor } from './parser/rustParserVisitor';
+import { Trees } from 'antlr4ng';
 
 class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implements rustParserVisitor<number> {
     // Visit a parse tree produced by rustParser#prog
     visitProgram(ctx: ProgramContext): number {
+        this.conductor.sendOutput(`Visiting program: ${ctx.getText()}`);
         let result = 0;
         for (const stmt of ctx.stmt()) {
+            this.conductor.sendOutput(`Visiting stmt: ${stmt.getText()}`);
             result = this.visit(stmt);
         }
         return result;
@@ -17,6 +20,7 @@ class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implem
     
     // Visit a parse tree produced by rustParser#expression
     visitExpr_stmt(ctx: Expr_stmtContext): number {
+        console.log("visitExpr_stmt called with:", ctx.getText());
         if (ctx.getChildCount() === 1) {
             // INT case
             return parseInt(ctx.getText());
@@ -80,7 +84,8 @@ export class SimpleLangEvaluator extends BasicEvaluator {
             
             // Parse the input
             const tree = parser.program();
-            this.conductor.sendOutput(`tree: ${tree}`);
+            const treeStr = Trees.toStringTree(tree, parser);
+            this.conductor.sendOutput(`tree: ${treeStr}`);
             // Evaluate the parsed tree
             const result = this.visitor.visit(tree);
             

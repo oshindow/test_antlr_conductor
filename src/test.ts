@@ -1,18 +1,14 @@
-import { CharStream, CommonTokenStream } from 'antlr4ng';
-import { rustLexer } from './parser/rustLexer';
-import { rustParser } from './parser/rustParser';
+import { SimpleLangEvaluator } from './SimpleLangEvaluator';
 
-const input = `
-    let mut x: i32 = 5;
-    if x > 0 {
-        x = x - 1;
+// Minimal stub for IRunnerPlugin
+const conductor = {
+    sendOutput: (msg: string) => {
+        console.log(msg);
     }
-`;
+} as any;
 
-const inputStream = CharStream.fromString(input);
-const lexer = new rustLexer(inputStream);
-const tokenStream = new CommonTokenStream(lexer);
-const parser = new rustParser(tokenStream);
+const evaluator = new SimpleLangEvaluator(conductor);
 
-const tree = parser.program();
-console.log(tree.toStringTree(parser));
+(async () => {
+    await evaluator.evaluateChunk('5 - 2;');
+})();
