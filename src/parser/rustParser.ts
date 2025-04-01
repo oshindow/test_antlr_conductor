@@ -35,20 +35,64 @@ export class rustParser extends antlr.Parser {
     public static readonly KW_TRY = 21;
     public static readonly KW_I32 = 22;
     public static readonly KW_BOOL = 23;
-    public static readonly SEMI = 24;
-    public static readonly COLON = 25;
-    public static readonly EQ = 26;
-    public static readonly LCURLYBRACE = 27;
-    public static readonly RCURLYBRACE = 28;
-    public static readonly LPAREN = 29;
-    public static readonly RPAREN = 30;
-    public static readonly PLUS = 31;
-    public static readonly MINUS = 32;
-    public static readonly STAR = 33;
-    public static readonly SLASH = 34;
-    public static readonly INTEGER_LITERAL = 35;
-    public static readonly NON_KEYWORD_IDENTIFIER = 36;
-    public static readonly RAW_IDENTIFIER = 37;
+    public static readonly PLUS = 24;
+    public static readonly MINUS = 25;
+    public static readonly STAR = 26;
+    public static readonly SLASH = 27;
+    public static readonly PERCENT = 28;
+    public static readonly CARET = 29;
+    public static readonly NOT = 30;
+    public static readonly AND = 31;
+    public static readonly OR = 32;
+    public static readonly ANDAND = 33;
+    public static readonly OROR = 34;
+    public static readonly PLUSEQ = 35;
+    public static readonly MINUSEQ = 36;
+    public static readonly STAREQ = 37;
+    public static readonly SLASHEQ = 38;
+    public static readonly PERCENTEQ = 39;
+    public static readonly CARETEQ = 40;
+    public static readonly ANDEQ = 41;
+    public static readonly OREQ = 42;
+    public static readonly SHLEQ = 43;
+    public static readonly SHREQ = 44;
+    public static readonly EQ = 45;
+    public static readonly EQEQ = 46;
+    public static readonly NE = 47;
+    public static readonly GT = 48;
+    public static readonly LT = 49;
+    public static readonly GE = 50;
+    public static readonly LE = 51;
+    public static readonly AT = 52;
+    public static readonly UNDERSCORE = 53;
+    public static readonly DOT = 54;
+    public static readonly DOTDOT = 55;
+    public static readonly DOTDOTDOT = 56;
+    public static readonly DOTDOTEQ = 57;
+    public static readonly COMMA = 58;
+    public static readonly SEMI = 59;
+    public static readonly COLON = 60;
+    public static readonly PATHSEP = 61;
+    public static readonly RARROW = 62;
+    public static readonly FATARROW = 63;
+    public static readonly POUND = 64;
+    public static readonly DOLLAR = 65;
+    public static readonly QUESTION = 66;
+    public static readonly LCURLYBRACE = 67;
+    public static readonly RCURLYBRACE = 68;
+    public static readonly LSQUAREBRACKET = 69;
+    public static readonly RSQUAREBRACKET = 70;
+    public static readonly LPAREN = 71;
+    public static readonly RPAREN = 72;
+    public static readonly LIFETIME_OR_LABEL = 73;
+    public static readonly INTEGER_LITERAL = 74;
+    public static readonly DEC_LITERAL = 75;
+    public static readonly HEX_LITERAL = 76;
+    public static readonly OCT_LITERAL = 77;
+    public static readonly BIN_LITERAL = 78;
+    public static readonly FLOAT_LITERAL = 79;
+    public static readonly NON_KEYWORD_IDENTIFIER = 80;
+    public static readonly RAW_IDENTIFIER = 81;
     public static readonly RULE_program = 0;
     public static readonly RULE_stmt = 1;
     public static readonly RULE_let_stmt = 2;
@@ -66,7 +110,12 @@ export class rustParser extends antlr.Parser {
         null, "'break'", "'const'", "'continue'", "'else'", "'enum'", "'false'", 
         "'fn'", "'for'", "'if'", "'in'", "'let'", "'mut'", "'return'", "'self'", 
         "'Self'", "'static'", "'true'", "'type'", "'unsafe'", "'while'", 
-        "'try'", "'i32'", "'bool'"
+        "'try'", "'i32'", "'bool'", "'+'", "'-'", "'*'", "'/'", "'%'", "'^'", 
+        "'!'", "'&'", "'|'", "'&&'", "'||'", "'+='", "'-='", "'*='", "'/='", 
+        "'%='", "'^='", "'&='", "'|='", "'<<='", "'>>='", "'='", "'=='", 
+        "'!='", "'>'", "'<'", "'>='", "'<='", "'@'", "'_'", "'.'", "'..'", 
+        "'...'", "'..='", "','", "';'", "':'", "'::'", "'->'", "'=>'", "'#'", 
+        "'$'", "'?'", "'{'", "'}'", "'['", "']'", "'('", "')'"
     ];
 
     public static readonly symbolicNames = [
@@ -74,8 +123,15 @@ export class rustParser extends antlr.Parser {
         "KW_FALSE", "KW_FN", "KW_FOR", "KW_IF", "KW_IN", "KW_LET", "KW_MUT", 
         "KW_RETURN", "KW_SELFVALUE", "KW_SELFTYPE", "KW_STATIC", "KW_TRUE", 
         "KW_TYPE", "KW_UNSAFE", "KW_WHILE", "KW_TRY", "KW_I32", "KW_BOOL", 
-        "SEMI", "COLON", "EQ", "LCURLYBRACE", "RCURLYBRACE", "LPAREN", "RPAREN", 
-        "PLUS", "MINUS", "STAR", "SLASH", "INTEGER_LITERAL", "NON_KEYWORD_IDENTIFIER", 
+        "PLUS", "MINUS", "STAR", "SLASH", "PERCENT", "CARET", "NOT", "AND", 
+        "OR", "ANDAND", "OROR", "PLUSEQ", "MINUSEQ", "STAREQ", "SLASHEQ", 
+        "PERCENTEQ", "CARETEQ", "ANDEQ", "OREQ", "SHLEQ", "SHREQ", "EQ", 
+        "EQEQ", "NE", "GT", "LT", "GE", "LE", "AT", "UNDERSCORE", "DOT", 
+        "DOTDOT", "DOTDOTDOT", "DOTDOTEQ", "COMMA", "SEMI", "COLON", "PATHSEP", 
+        "RARROW", "FATARROW", "POUND", "DOLLAR", "QUESTION", "LCURLYBRACE", 
+        "RCURLYBRACE", "LSQUAREBRACKET", "RSQUAREBRACKET", "LPAREN", "RPAREN", 
+        "LIFETIME_OR_LABEL", "INTEGER_LITERAL", "DEC_LITERAL", "HEX_LITERAL", 
+        "OCT_LITERAL", "BIN_LITERAL", "FLOAT_LITERAL", "NON_KEYWORD_IDENTIFIER", 
         "RAW_IDENTIFIER"
     ];
     public static readonly ruleNames = [
@@ -107,7 +163,7 @@ export class rustParser extends antlr.Parser {
             this.state = 27;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while (((((_la - 6)) & ~0x1F) === 0 && ((1 << (_la - 6)) & 3766503469) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1545) !== 0)) {
                 {
                 {
                 this.state = 24;
@@ -227,7 +283,7 @@ export class rustParser extends antlr.Parser {
             this.state = 50;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            if (_la === 25) {
+            if (_la === 60) {
                 {
                 this.state = 48;
                 this.match(rustParser.COLON);
@@ -239,7 +295,7 @@ export class rustParser extends antlr.Parser {
             this.state = 54;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            if (_la === 26) {
+            if (_la === 45) {
                 {
                 this.state = 52;
                 this.match(rustParser.EQ);
@@ -412,7 +468,7 @@ export class rustParser extends antlr.Parser {
             this.state = 82;
             this.errorHandler.sync(this);
             _la = this.tokenStream.LA(1);
-            while (((((_la - 6)) & ~0x1F) === 0 && ((1 << (_la - 6)) & 3766503469) !== 0)) {
+            while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1182528) !== 0) || ((((_la - 71)) & ~0x1F) === 0 && ((1 << (_la - 71)) & 1545) !== 0)) {
                 {
                 {
                 this.state = 79;
@@ -520,7 +576,7 @@ export class rustParser extends antlr.Parser {
                     }
                     this.state = 97;
                     _la = this.tokenStream.LA(1);
-                    if(!(((((_la - 31)) & ~0x1F) === 0 && ((1 << (_la - 31)) & 15) !== 0))) {
+                    if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 251658240) !== 0))) {
                     this.errorHandler.recoverInline(this);
                     }
                     else {
@@ -591,7 +647,7 @@ export class rustParser extends antlr.Parser {
             {
             this.state = 106;
             _la = this.tokenStream.LA(1);
-            if(!(((((_la - 6)) & ~0x1F) === 0 && ((1 << (_la - 6)) & 536872961) !== 0))) {
+            if(!(_la === 6 || _la === 17 || _la === 74)) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -622,7 +678,7 @@ export class rustParser extends antlr.Parser {
             {
             this.state = 108;
             _la = this.tokenStream.LA(1);
-            if(!(_la === 36 || _la === 37)) {
+            if(!(_la === 80 || _la === 81)) {
             this.errorHandler.recoverInline(this);
             }
             else {
@@ -661,7 +717,7 @@ export class rustParser extends antlr.Parser {
     }
 
     public static readonly _serializedATN: number[] = [
-        4,1,37,111,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,81,111,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,1,0,5,0,26,8,0,10,
         0,12,0,29,9,0,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,42,
         8,1,1,2,1,2,3,2,46,8,2,1,2,1,2,1,2,3,2,51,8,2,1,2,1,2,3,2,55,8,2,
@@ -669,28 +725,28 @@ export class rustParser extends antlr.Parser {
         5,1,5,1,5,1,5,1,5,1,5,1,6,1,6,1,7,1,7,5,7,81,8,7,10,7,12,7,84,9,
         7,1,7,1,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,95,8,8,1,8,1,8,1,8,5,8,
         100,8,8,10,8,12,8,103,9,8,1,9,1,9,1,10,1,10,1,11,1,11,1,11,0,1,16,
-        12,0,2,4,6,8,10,12,14,16,18,20,22,0,4,1,0,31,34,1,0,22,23,3,0,6,
-        6,17,17,35,35,1,0,36,37,112,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,0,0,
+        12,0,2,4,6,8,10,12,14,16,18,20,22,0,4,1,0,24,27,1,0,22,23,3,0,6,
+        6,17,17,74,74,1,0,80,81,112,0,27,1,0,0,0,2,41,1,0,0,0,4,43,1,0,0,
         0,6,56,1,0,0,0,8,66,1,0,0,0,10,70,1,0,0,0,12,76,1,0,0,0,14,78,1,
         0,0,0,16,94,1,0,0,0,18,104,1,0,0,0,20,106,1,0,0,0,22,108,1,0,0,0,
         24,26,3,2,1,0,25,24,1,0,0,0,26,29,1,0,0,0,27,25,1,0,0,0,27,28,1,
         0,0,0,28,30,1,0,0,0,29,27,1,0,0,0,30,31,5,0,0,1,31,1,1,0,0,0,32,
-        33,3,4,2,0,33,34,5,24,0,0,34,42,1,0,0,0,35,36,3,12,6,0,36,37,5,24,
+        33,3,4,2,0,33,34,5,59,0,0,34,42,1,0,0,0,35,36,3,12,6,0,36,37,5,59,
         0,0,37,42,1,0,0,0,38,42,3,6,3,0,39,42,3,8,4,0,40,42,3,10,5,0,41,
         32,1,0,0,0,41,35,1,0,0,0,41,38,1,0,0,0,41,39,1,0,0,0,41,40,1,0,0,
         0,42,3,1,0,0,0,43,45,5,11,0,0,44,46,5,12,0,0,45,44,1,0,0,0,45,46,
-        1,0,0,0,46,47,1,0,0,0,47,50,3,22,11,0,48,49,5,25,0,0,49,51,3,18,
-        9,0,50,48,1,0,0,0,50,51,1,0,0,0,51,54,1,0,0,0,52,53,5,26,0,0,53,
+        1,0,0,0,46,47,1,0,0,0,47,50,3,22,11,0,48,49,5,60,0,0,49,51,3,18,
+        9,0,50,48,1,0,0,0,50,51,1,0,0,0,51,54,1,0,0,0,52,53,5,45,0,0,53,
         55,3,16,8,0,54,52,1,0,0,0,54,55,1,0,0,0,55,5,1,0,0,0,56,57,5,9,0,
         0,57,58,3,16,8,0,58,64,3,14,7,0,59,62,5,4,0,0,60,63,3,14,7,0,61,
         63,3,6,3,0,62,60,1,0,0,0,62,61,1,0,0,0,63,65,1,0,0,0,64,59,1,0,0,
         0,64,65,1,0,0,0,65,7,1,0,0,0,66,67,5,20,0,0,67,68,3,16,8,0,68,69,
         3,14,7,0,69,9,1,0,0,0,70,71,5,8,0,0,71,72,3,22,11,0,72,73,5,10,0,
         0,73,74,3,16,8,0,74,75,3,14,7,0,75,11,1,0,0,0,76,77,3,16,8,0,77,
-        13,1,0,0,0,78,82,5,27,0,0,79,81,3,2,1,0,80,79,1,0,0,0,81,84,1,0,
+        13,1,0,0,0,78,82,5,67,0,0,79,81,3,2,1,0,80,79,1,0,0,0,81,84,1,0,
         0,0,82,80,1,0,0,0,82,83,1,0,0,0,83,85,1,0,0,0,84,82,1,0,0,0,85,86,
-        5,28,0,0,86,15,1,0,0,0,87,88,6,8,-1,0,88,89,5,29,0,0,89,90,3,16,
-        8,0,90,91,5,30,0,0,91,95,1,0,0,0,92,95,3,22,11,0,93,95,3,20,10,0,
+        5,68,0,0,86,15,1,0,0,0,87,88,6,8,-1,0,88,89,5,71,0,0,89,90,3,16,
+        8,0,90,91,5,72,0,0,91,95,1,0,0,0,92,95,3,22,11,0,93,95,3,20,10,0,
         94,87,1,0,0,0,94,92,1,0,0,0,94,93,1,0,0,0,95,101,1,0,0,0,96,97,10,
         4,0,0,97,98,7,0,0,0,98,100,3,16,8,5,99,96,1,0,0,0,100,103,1,0,0,
         0,101,99,1,0,0,0,101,102,1,0,0,0,102,17,1,0,0,0,103,101,1,0,0,0,
