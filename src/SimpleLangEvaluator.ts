@@ -1,7 +1,9 @@
 import { CharStream, CommonTokenStream } from "antlr4ng";
 import { rustLexer } from "./parser/rustLexer";
 import {
-    rustParser, type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext
+    rustParser, 
+    type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
+    DivideContext, SubtractContext
 } from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
@@ -21,6 +23,17 @@ class MyVisitor extends rustVisitor<number> {
 
     public visitMultiply = (ctx: MultiplyContext): number => {
         return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
+    };
+
+    public visitDivide = (ctx: DivideContext): number => {
+        if (this.visit(ctx.expression(1)!)! === 0) {
+            throw new Error("Division by zero");
+        }
+        return this.visit(ctx.expression(0)!)! / this.visit(ctx.expression(1)!)!;
+    };
+
+    public visitSubtract = (ctx: SubtractContext): number => {
+        return this.visit(ctx.expression(0)!)! - this.visit(ctx.expression(1)!)!;
     };
 
     public visitSimple = (ctx: SimpleContext): number => {
