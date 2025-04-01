@@ -1,7 +1,7 @@
 import { CharStream, CommonTokenStream } from "antlr4ng";
 import { rustLexer } from "./parser/rustLexer";
 import {
-    rustParser, type AddContext, type MultiplyContext, type SimpleContext
+    rustParser, type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext
 } from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
@@ -26,8 +26,11 @@ class MyVisitor extends rustVisitor<number> {
     public visitSimple = (ctx: SimpleContext): number => {
         return Number.parseInt(ctx.number().NUMBER().getText(), 10);
     };
-}
 
+    public visitParenExpr = (ctx: ParenExprContext): number => {
+        return this.visit(ctx.expression())!;
+    }
+}
 // const visitor = new MyVisitor();
 // const result = visitor.visit(tree);
 // console.log(result); // prints "7"
