@@ -3,7 +3,7 @@ import { rustLexer } from "./parser/rustLexer";
 import {
     rustParser, 
     type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
-    DivideContext, SubtractContext
+    type DivideContext, type SubtractContext
 } from "./parser/rustParser";
 import { BasicEvaluator } from "conductor/dist/conductor/runner";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
