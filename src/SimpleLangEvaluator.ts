@@ -9,6 +9,7 @@ import { Trees } from 'antlr4ng';
 class SimpleLangEvaluatorVisitor extends AbstractParseTreeVisitor<number> implements rustParserVisitor<number> {
     // Visit a parse tree produced by rustParser#prog
     visitProgram(ctx: ProgramContext): number {
+        console.log("visitProgram called with:", ctx.getText());
         // this.conductor.sendOutput(`Visiting program: ${ctx.getText()}`);
         let result = 0;
         for (const stmt of ctx.stmt()) {
