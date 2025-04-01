@@ -17,32 +17,32 @@ import { Trees } from 'antlr4ng';
 // const tree = parser.start();
 
 class MyVisitor extends rustVisitor<number> {
-    public visitAdd = (ctx: AddContext): number => {
-        return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
-    };
+    // public visitAdd = (ctx: AddContext): number => {
+    //     return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
+    // };
 
-    public visitMultiply = (ctx: MultiplyContext): number => {
-        return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
-    };
+    // public visitMultiply = (ctx: MultiplyContext): number => {
+    //     return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
+    // };
 
-    public visitDivide = (ctx: DivideContext): number => {
-        if (this.visit(ctx.expression(1)!)! === 0) {
-            throw new Error("Division by zero");
-        }
-        return this.visit(ctx.expression(0)!)! / this.visit(ctx.expression(1)!)!;
-    };
+    // public visitDivide = (ctx: DivideContext): number => {
+    //     if (this.visit(ctx.expression(1)!)! === 0) {
+    //         throw new Error("Division by zero");
+    //     }
+    //     return this.visit(ctx.expression(0)!)! / this.visit(ctx.expression(1)!)!;
+    // };
 
-    public visitSubtract = (ctx: SubtractContext): number => {
-        return this.visit(ctx.expression(0)!)! - this.visit(ctx.expression(1)!)!;
-    };
+    // public visitSubtract = (ctx: SubtractContext): number => {
+    //     return this.visit(ctx.expression(0)!)! - this.visit(ctx.expression(1)!)!;
+    // };
 
-    public visitSimple = (ctx: SimpleContext): number => {
-        return Number.parseInt(ctx.number().NUMBER().getText(), 10);
-    };
+    // public visitSimple = (ctx: SimpleContext): number => {
+    //     return Number.parseInt(ctx.number().NUMBER().getText(), 10);
+    // };
 
-    public visitParenExpr = (ctx: ParenExprContext): number => {
-        return this.visit(ctx.getChild(1))!;
-    }
+    // public visitParenExpr = (ctx: ParenExprContext): number => {
+    //     return this.visit(ctx.getChild(1))!;
+    // }
 
     public visitExpression(ctx: ExpressionContext): number {
 
