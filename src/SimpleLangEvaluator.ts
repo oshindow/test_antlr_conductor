@@ -77,15 +77,18 @@ export class SimpleLangEvaluator extends BasicEvaluator {
         this.executionCount++;
         try {
             // Create the lexer and parser
+            this.conductor.sendOutput(`Create the lexer and parser`);
             const inputStream = CharStream.fromString(chunk);
             const lexer = new rustLexer(inputStream);
             const tokenStream = new CommonTokenStream(lexer);
             const parser = new rustParser(tokenStream);
             
             // Parse the input
+            this.conductor.sendOutput(`Parse the input`);
             const tree = parser.program();
-            const treeStr = Trees.toStringTree(tree, rustParser.ruleNames);
-            this.conductor.sendOutput(`tree: ${treeStr}`);
+            // this.conductorsendOutput("ruleNames:", rustParser.ruleNames); 
+            // const treeStr = Trees.toStringTree(tree, rustParser.ruleNames);
+            this.conductor.sendOutput(`tree: ${tree}`);
             // Evaluate the parsed tree
             const result = this.visitor.visit(tree);
             
