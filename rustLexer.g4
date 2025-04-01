@@ -133,3 +133,5 @@ fragment UNICODE_OIDS: '\u1885' ..'\u1886' | '\u2118' | '\u212e' | '\u309b' ..'\
 fragment UNICODE_OIDC: '\u00b7' | '\u0387' | '\u1369' ..'\u1371' | '\u19da';
 
 RAW_IDENTIFIER: 'r#' NON_KEYWORD_IDENTIFIER;
+
+INT: [0-9]+;
