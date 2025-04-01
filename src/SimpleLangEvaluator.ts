@@ -47,10 +47,10 @@ class MyVisitor extends rustVisitor<number> {
     // public visitParenExpr = (ctx: ParenExprContext): number => {
     //     return this.visit(ctx.getChild(1))!;
     // }
-    visitStart = (ctx: StartContext): number => {
-        display("call visitStart");
-        return this.visit(ctx.expression());
-    }
+    // visitStart = (ctx: StartContext): number => {
+    //     display("call visitStart");
+    //     return this.visit(ctx.expression());
+    // }
     
     public visitExpression(ctx: ExpressionContext): number {
         display("call visitExpression"); // prints "7"
