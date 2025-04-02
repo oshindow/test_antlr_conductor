@@ -1,94 +1,46 @@
 import { CharStream, CommonTokenStream } from "antlr4ng";
-import { rustLexer } from "./parser/rustLexer";
+import { rustLexer } from "./parser/rustLexer.js";
 import {
     rustParser, 
     type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
-    type DivideContext, type SubtractContext, type ExpressionContext,
-    type StartContext
-} from "./parser/rustParser";
-import { BasicEvaluator } from "conductor/dist/conductor/runner";
-import { IRunnerPlugin } from "conductor/dist/conductor/runner/types";
-import { rustVisitor } from "./parser/rustVisitor";
+    type DivideContext, type SubtractContext
+} from "./parser/rustParser.js";
+import { BasicEvaluator } from "conductor/dist/conductor/runner/index.js";
+import { IRunnerPlugin } from "conductor/dist/conductor/runner/types/index.js";
+import { rustVisitor } from "./parser/rustVisitor.js";
 import { Trees } from 'antlr4ng';
-// const input = "1 + 2 * 3";
-// const inputStream = CharStream.fromString(input);
-// const lexer = new rustLexer(inputStream);
-// const tokenStream = new CommonTokenStream(lexer);
-// const parser = new rustParser(tokenStream);
-// const tree = parser.start();
-function display(msg: string): void {
-    alert(msg);
-}
 
-class MyVisitor extends rustVisitor<number> {
-    // public visitAdd = (ctx: AddContext): number => {
-    //     return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
-    // };
+export class MyVisitor extends rustVisitor<number> {
+    public visitAdd = (ctx: AddContext): number => {
+        return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
+    };
 
-    // public visitMultiply = (ctx: MultiplyContext): number => {
-    //     return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
-    // };
+    public visitMultiply = (ctx: MultiplyContext): number => {
+        return this.visit(ctx.expression(0)!)! * this.visit(ctx.expression(1)!)!;
+    };
 
-    // public visitDivide = (ctx: DivideContext): number => {
-    //     if (this.visit(ctx.expression(1)!)! === 0) {
-    //         throw new Error("Division by zero");
-    //     }
-    //     return this.visit(ctx.expression(0)!)! / this.visit(ctx.expression(1)!)!;
-    // };
-
-    // public visitSubtract = (ctx: SubtractContext): number => {
-    //     return this.visit(ctx.expression(0)!)! - this.visit(ctx.expression(1)!)!;
-    // };
-
-    // public visitSimple = (ctx: SimpleContext): number => {
-    //     return Number.parseInt(ctx.number().NUMBER().getText(), 10);
-    // };
-
-    // public visitParenExpr = (ctx: ParenExprContext): number => {
-    //     return this.visit(ctx.getChild(1))!;
-    // }
-    // visitStart = (ctx: StartContext): number => {
-    //     display("call visitStart");
-    //     return this.visit(ctx.expression());
-    // }
-    
-    public visitExpression(ctx: ExpressionContext): number {
-        display("call visitExpression"); // prints "7"
-        if (ctx.getChildCount() === 1) {
-            // INT case
-            return parseInt(ctx.getText());
-        } else if (ctx.getChildCount() === 3) {
-            if (ctx.getChild(0).getText() === '(' && ctx.getChild(2).getText() === ')') {
-                // Parenthesized expression
-                return this.visit(ctx.getChild(1) as ExpressionContext);
-            } else {
-                // Binary operation
-                const left = this.visit(ctx.getChild(0) as ExpressionContext);
-                const op = ctx.getChild(1).getText();
-                const right = this.visit(ctx.getChild(2) as ExpressionContext);
-
-                switch (op) {
-                    case '+': return left + right;
-                    case '-': return left - right;
-                    case '*': return left * right;
-                    case '/':
-                        if (right === 0) {
-                            throw new Error("Division by zero");
-                        }
-                        return left / right;
-                    default:
-                        throw new Error(`Unknown operator: ${op}`);
-                }
-            }
+    public visitDivide = (ctx: DivideContext): number => {
+        if (this.visit(ctx.expression(1)!)! === 0) {
+            throw new Error("Division by zero");
         }
-        
-        throw new Error(`Invalid expression: ${ctx.getText()}`);
+        return this.visit(ctx.expression(0)!)! / this.visit(ctx.expression(1)!)!;
+    };
+
+    public visitSubtract = (ctx: SubtractContext): number => {
+        return this.visit(ctx.expression(0)!)! - this.visit(ctx.expression(1)!)!;
+    };
+
+    public visitSimple = (ctx: SimpleContext): number => {
+        return Number.parseInt(ctx.number().NUMBER().getText(), 10);
+    };
+
+    public visitParenExpr = (ctx: ParenExprContext): number => {
+        console.log("call visitParenExpr");
+        return this.visit(ctx.getChild(1))!;
     }
 
 }
-// const visitor = new MyVisitor();
-// const result = visitor.visit(tree);
-// console.log(result); // prints "7"
+
 
 export class SimpleLangEvaluator extends BasicEvaluator {
     private executionCount: number;
