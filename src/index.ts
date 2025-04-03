@@ -2,19 +2,19 @@ import { CharStream, CommonTokenStream, Trees } from "antlr4ng";
 import { rustLexer } from "./parser/rustLexer.js";
 import { rustParser } from "./parser/rustParser.js";
 import { MyVisitor } from "./SimpleLangEvaluator.js";
-import { ThrowingErrorListener } from "./ErrorListener.js";  
+// import { ThrowingErrorListener } from "./ErrorListener.js";  
 
 
-const input = "(3 - 2) * 5";
+const input = "(3 + 2) ^ (5 + 1)";
 const inputStream = CharStream.fromString(input);
 const lexer = new rustLexer(inputStream);
-lexer.removeErrorListeners();
-lexer.addErrorListener(new ThrowingErrorListener());
+// lexer.removeErrorListeners();
+// lexer.addErrorListener(new ThrowingErrorListener());
 
 const tokenStream = new CommonTokenStream(lexer);
 const parser = new rustParser(tokenStream);
-parser.removeErrorListeners();
-parser.addErrorListener(new ThrowingErrorListener());
+// parser.removeErrorListeners();
+// parser.addErrorListener(new ThrowingErrorListener());
 
 try {
 
