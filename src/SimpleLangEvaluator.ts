@@ -35,8 +35,7 @@ export class MyVisitor extends rustVisitor<number> {
     };
 
     public visitParenExpr = (ctx: ParenExprContext): number => {
-        console.log("call visitParenExpr");
-        return this.visit(ctx.getChild(1))!;
+        return this.visit(ctx.expression()!);
     }
 
 }
