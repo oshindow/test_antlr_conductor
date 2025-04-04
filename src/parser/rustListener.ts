@@ -4,12 +4,15 @@ import { ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode } from "a
 
 
 import { StartContext } from "./rustParser.js";
+import { Let_stmtContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
+import { TyContext } from "./rustParser.js";
+import { IdentifierContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 
 
@@ -28,6 +31,16 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitStart?: (ctx: StartContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.let_stmt`.
+     * @param ctx the parse tree
+     */
+    enterLet_stmt?: (ctx: Let_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.let_stmt`.
+     * @param ctx the parse tree
+     */
+    exitLet_stmt?: (ctx: Let_stmtContext) => void;
     /**
      * Enter a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
@@ -100,6 +113,26 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitParenExpr?: (ctx: ParenExprContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.ty`.
+     * @param ctx the parse tree
+     */
+    enterTy?: (ctx: TyContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.ty`.
+     * @param ctx the parse tree
+     */
+    exitTy?: (ctx: TyContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.identifier`.
+     * @param ctx the parse tree
+     */
+    enterIdentifier?: (ctx: IdentifierContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.identifier`.
+     * @param ctx the parse tree
+     */
+    exitIdentifier?: (ctx: IdentifierContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.number`.
      * @param ctx the parse tree

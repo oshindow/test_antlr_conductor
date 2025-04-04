@@ -5,7 +5,7 @@ import { MyVisitor } from "./SimpleLangEvaluator.js";
 //import { ThrowingErrorListener } from "./ErrorListener.js";  
 
 
-const input = "(3 + 2) ^ (5 + 1)";
+const input = "let mut x = 8;\nx+1;";
 const inputStream = CharStream.fromString(input);
 const lexer = new rustLexer(inputStream);
 // lexer.removeErrorListeners();

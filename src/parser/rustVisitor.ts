@@ -4,12 +4,15 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 
 import { StartContext } from "./rustParser.js";
+import { Let_stmtContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
+import { TyContext } from "./rustParser.js";
+import { IdentifierContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 
 
@@ -27,6 +30,12 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitStart?: (ctx: StartContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.let_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitLet_stmt?: (ctx: Let_stmtContext) => Result;
     /**
      * Visit a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
@@ -69,6 +78,18 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitParenExpr?: (ctx: ParenExprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.ty`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitTy?: (ctx: TyContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.identifier`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIdentifier?: (ctx: IdentifierContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.number`.
      * @param ctx the parse tree

@@ -3,14 +3,21 @@ import { rustLexer } from "./parser/rustLexer.js";
 import {
     rustParser, 
     type AddContext, type MultiplyContext, type SimpleContext, type ParenExprContext,
-    type DivideContext, type SubtractContext
+    type DivideContext, type SubtractContext, type Let_stmtContext,
 } from "./parser/rustParser.js";
 import { BasicEvaluator } from "conductor/dist/conductor/runner/index.js";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types/index.js";
 import { rustVisitor } from "./parser/rustVisitor.js";
 import { Trees } from 'antlr4ng';
 
-export class MyVisitor extends rustVisitor<number> {
+interface Variable {
+    value: number;
+    mutable: boolean;
+}
+
+export class MyVisitor extends rustVisitor<any> {
+    private variables: Map<string, Variable> = new Map();
+
     public visitAdd = (ctx: AddContext): number => {
         return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
     };
@@ -37,6 +44,32 @@ export class MyVisitor extends rustVisitor<number> {
     public visitParenExpr = (ctx: ParenExprContext): number => {
         return this.visit(ctx.getChild(1)!);
     }
+
+    public visitLetStatement = (ctx: Let_stmtContext): number => {
+        const identifier = ctx.identifier().getText();
+        const isMutable = ctx.MUT() !== undefined;
+        const initializer = ctx.expression() ? this.visit(ctx.expression()!) : 0;
+
+        if (this.variables.has(identifier)) {
+            if (!this.variables.get(identifier)!.mutable) {
+                throw new Error(`Cannot reassign immutable variable '${identifier}'`);
+            }
+        }
+
+        this.variables.set(identifier, { value: initializer, mutable: isMutable });
+        return initializer;
+    };
+
+    public visitVariableReference = (ctx: any): number => {
+        const identifier = ctx.IDENTIFIER().getText();
+        const variable = this.variables.get(identifier);
+
+        if (!variable) {
+            throw new Error(`Variable '${identifier}' is not defined`);
+        }
+
+        return variable.value;
+    };
 
 }
 
