@@ -2,6 +2,11 @@ grammar rust;
 
 start:
     expression
+    |let_stmt
+;
+
+let_stmt: 
+    'let' (MUT)? identifier (':' ty)? ('=' expression)?
 ;
 
 expression:
@@ -11,6 +16,23 @@ expression:
     | expression '-' expression # subtract
     | number                    # simple
     | LPAREN expression RPAREN  # parenExpr
+;
+
+MUT:
+    'mut'
+;
+
+ty: 
+    number
+    | 'bool'
+    ;
+
+identifier: 
+    IDENTIFIER
+;
+
+IDENTIFIER:
+    [a-zA-Z_][a-zA-Z0-9_]*
 ;
 
 number:

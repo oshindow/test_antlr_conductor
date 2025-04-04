@@ -15,4 +15,6 @@ node_modules/
 #!.yarn/cache
 .pnp.*
 src/*.js
+src/*.js.map
 src/parser/*.js
+src/parser/*.js.map
