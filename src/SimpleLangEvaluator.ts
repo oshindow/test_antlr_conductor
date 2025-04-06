@@ -39,6 +39,12 @@ interface StructDef {
 
 type StructInstance = Map<string, any>;
 
+interface EnumDef {
+    name: string;
+    variants: Set<string>;
+}
+
+
 
 export class MyVisitor extends rustVisitor<any> {
     private variables: Map<string, Variable> = new Map();
@@ -59,6 +65,7 @@ export class MyVisitor extends rustVisitor<any> {
     
     private structDefs: Map<string, StructDef> = new Map();
 
+    private enumDefs: Map<string, EnumDef> = new Map();
 
     public visitStart = (ctx: any): number => {
         let result = 0;
@@ -128,25 +135,30 @@ export class MyVisitor extends rustVisitor<any> {
     };
 
     // function related
-    public visitFunction_decl = (ctx: any): null => {
-        const name = ctx.identifier().IDENTIFIER().getText();
+    public visitFunctionDecl = (ctx: any): null => {
+        // console.log(ctx.identifier())
+        const name = ctx.identifier(0).getText();   
         // console.log(name)
-        const paramList = ctx.parameter_list()?.identifier() || [];
-        // console.log(paramList)
-        const params = paramList.map((id: any) => id.IDENTIFIER().getText());
-        // console.log(params)
+        const paramNodes = ctx.parameter_list()?.parameter() || [];
+        const params = paramNodes.map((param: any) => {
+            return param.identifier(0).getText(); 
+        });
+    
         const body = ctx.block();
+    
         this.functions.set(name, { params, body });
+    
         return null;
-    }
+    };
+    
 
     public visitFunctionCall = (ctx: any): number => {
         const name = ctx.identifier().IDENTIFIER().getText();
-        // console.log(name)
+        console.log(name)
         const func = this.functions.get(name);
         if (!func) throw new Error(`Function '${name}' not found`);
     
-        const args = ctx.argument_list()?.expression().map(e => this.visit(e)) || [];
+        const args = ctx.argument_list()?.expression().map((e: any) => this.visit(e)) || [];
         // console.log(args)
         if (args.length !== func.params.length) {
             throw new Error(`Function '${name}' expects ${func.params.length} arguments`);
@@ -301,6 +313,67 @@ export class MyVisitor extends rustVisitor<any> {
     
         return obj.get(field);
     };
+
+    public visitEnum_decl = (ctx: any): null => {
+        const name = ctx.identifier().IDENTIFIER().getText();
+        const variants = new Set<string>();
+    
+        if (ctx.variant_list()) {
+            for (const id of ctx.variant_list().identifier()) {
+                variants.add(id.IDENTIFIER().getText());
+            }
+        }
+    
+        this.enumDefs.set(name, { name, variants });
+        return null;
+    };
+    
+
+    public visitEnumAccess = (ctx: any): string => {
+        const enumName = ctx.identifier(0).IDENTIFIER().getText();
+        const variant = ctx.identifier(1).IDENTIFIER().getText();
+    
+        const def = this.enumDefs.get(enumName);
+        if (!def) throw new Error(`Enum '${enumName}' not defined`);
+        if (!def.variants.has(variant)) throw new Error(`Variant '${variant}' not in enum '${enumName}'`);
+    
+        return `${enumName}::${variant}`;
+    };
+    
+    
+    public visitMatchExpr = (ctx: any): number => {
+        const value = this.visit(ctx.expression()); 
+        const arms = ctx.match_arm_list().match_arm();
+    
+        for (const arm of arms) {
+            const pattern = arm.match_pattern();
+    
+            if (pattern.getText() === '_') {
+                return this.visit(arm.expression());
+            }
+    
+            const patternValue = this.visit(pattern);
+            if (patternValue === value) {
+                return this.visit(arm.expression());
+            }
+        }
+    
+        throw new Error("No match arm matched");
+    };
+    
+    
+    
+    public visitMatch_pattern = (ctx: any): any => {
+        if (ctx.NUMBER()) return Number(ctx.NUMBER().getText());
+        if (ctx.getText() === '_') return '_';
+        if (ctx.identifier().length === 2) {
+            const enumName = ctx.identifier(0).IDENTIFIER().getText();
+            const variant = ctx.identifier(1).IDENTIFIER().getText();
+            return `${enumName}::${variant}`;
+        }
+        throw new Error(`Unsupported match pattern: ${ctx.getText()}`);
+    };
+    
     
     public visitReturn_stmt = (ctx: any): never => {
         const value = this.visit(ctx.expression());

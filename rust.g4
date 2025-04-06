@@ -15,6 +15,7 @@ statement:
     | break_stmt
     | block
     | struct_decl 
+    | enum_decl
 ;
 
 let_stmt: 
@@ -34,11 +35,15 @@ expression_stmt:
 ;
 
 function_decl:
-    'fn' identifier '(' parameter_list? ')' block
+    'fn' identifier '(' parameter_list? ')' ('->' identifier)? block  # functionDecl
 ;
 
 parameter_list:
-    identifier (',' identifier)*
+    parameter (',' parameter)*
+;
+
+parameter:
+    identifier (':' identifier)?  
 ;
 
 for_stmt:
@@ -69,6 +74,15 @@ field_init_list:
     identifier ':' expression (',' identifier ':' expression)*
 ;
 
+enum_decl:
+    'enum' identifier '{' variant_list? '}'
+;
+
+variant_list:
+    identifier (',' identifier)* ','?
+;
+
+
 expression:
     expression '*' expression   # multiply
     | expression '/' expression # divide
@@ -83,6 +97,8 @@ expression:
     | expression '.' identifier              # fieldAccess
     | STRING             # stringLiteral
     | BOOL               # boolLiteral
+    | identifier '::' identifier    # enumAccess
+    | 'match' expression '{' match_arm_list '}'   # matchExpr
     ;
 
 MUT:
@@ -116,11 +132,31 @@ number:
     NUMBER
 ;
 
+match_arm_list:
+    match_arm (',' match_arm)* ','?
+;
+
+match_arm:
+    match_pattern '=>' expression
+;
+
+match_pattern:
+      NUMBER
+    | '_'
+    | identifier '::' identifier
+;
+
 NUMBER:
     [0-9]+
 ;
 
+LINE_COMMENT
+    : '//' ~[\r\n]* -> skip
+;
 
+BLOCK_COMMENT
+    : '/*' .*? '*/' -> skip
+;
 
 WS:
     [ \t\r\n]+ -> skip

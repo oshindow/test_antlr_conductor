@@ -9,8 +9,9 @@ import { Let_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
 import { Return_stmtContext } from "./rustParser.js";
 import { Expression_stmtContext } from "./rustParser.js";
-import { Function_declContext } from "./rustParser.js";
+import { FunctionDeclContext } from "./rustParser.js";
 import { Parameter_listContext } from "./rustParser.js";
+import { ParameterContext } from "./rustParser.js";
 import { For_stmtContext } from "./rustParser.js";
 import { Loop_stmtContext } from "./rustParser.js";
 import { Break_stmtContext } from "./rustParser.js";
@@ -18,10 +19,13 @@ import { BlockContext } from "./rustParser.js";
 import { Struct_declContext } from "./rustParser.js";
 import { Field_listContext } from "./rustParser.js";
 import { Field_init_listContext } from "./rustParser.js";
+import { Enum_declContext } from "./rustParser.js";
+import { Variant_listContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
+import { MatchExprContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
@@ -30,11 +34,15 @@ import { StringLiteralContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
+import { EnumAccessContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
 import { TyContext } from "./rustParser.js";
 import { IdentifierContext } from "./rustParser.js";
 import { Argument_listContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
+import { Match_arm_listContext } from "./rustParser.js";
+import { Match_armContext } from "./rustParser.js";
+import { Match_patternContext } from "./rustParser.js";
 
 
 /**
@@ -82,17 +90,24 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitExpression_stmt?: (ctx: Expression_stmtContext) => Result;
     /**
-     * Visit a parse tree produced by `rustParser.function_decl`.
+     * Visit a parse tree produced by the `functionDecl`
+     * labeled alternative in `rustParser.function_decl`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitFunction_decl?: (ctx: Function_declContext) => Result;
+    visitFunctionDecl?: (ctx: FunctionDeclContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.parameter_list`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitParameter_list?: (ctx: Parameter_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.parameter`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitParameter?: (ctx: ParameterContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.for_stmt`.
      * @param ctx the parse tree
@@ -136,6 +151,18 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitField_init_list?: (ctx: Field_init_listContext) => Result;
     /**
+     * Visit a parse tree produced by `rustParser.enum_decl`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEnum_decl?: (ctx: Enum_declContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.variant_list`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitVariant_list?: (ctx: Variant_listContext) => Result;
+    /**
      * Visit a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -163,6 +190,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitVariableReference?: (ctx: VariableReferenceContext) => Result;
+    /**
+     * Visit a parse tree produced by the `matchExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMatchExpr?: (ctx: MatchExprContext) => Result;
     /**
      * Visit a parse tree produced by the `simple`
      * labeled alternative in `rustParser.expression`.
@@ -220,6 +254,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitBlockExpr?: (ctx: BlockExprContext) => Result;
     /**
+     * Visit a parse tree produced by the `enumAccess`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEnumAccess?: (ctx: EnumAccessContext) => Result;
+    /**
      * Visit a parse tree produced by the `multiply`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -250,5 +291,23 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitNumber?: (ctx: NumberContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.match_arm_list`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMatch_arm_list?: (ctx: Match_arm_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.match_arm`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMatch_arm?: (ctx: Match_armContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMatch_pattern?: (ctx: Match_patternContext) => Result;
 }
 
