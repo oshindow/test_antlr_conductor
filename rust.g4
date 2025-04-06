@@ -14,6 +14,7 @@ statement:
     | loop_stmt
     | break_stmt
     | block
+    | struct_decl 
 ;
 
 let_stmt: 
@@ -56,6 +57,18 @@ block:
     '{' statement* expression? '}'
 ;
 
+struct_decl:
+    'struct' identifier '{' field_list? '}'
+;
+
+field_list:
+    identifier (':' identifier)? (',' identifier (':' identifier)?)* 
+;
+
+field_init_list:
+    identifier ':' expression (',' identifier ':' expression)*
+;
+
 expression:
     expression '*' expression   # multiply
     | expression '/' expression # divide
@@ -66,6 +79,8 @@ expression:
     | identifier LPAREN argument_list? RPAREN  # functionCall
     | block                     # blockExpr
     | LPAREN expression RPAREN  # parenExpr
+    | identifier '{' field_init_list? '}'  # structInit
+    | expression '.' identifier              # fieldAccess
     ;
 
 MUT:

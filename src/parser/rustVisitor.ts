@@ -15,9 +15,14 @@ import { For_stmtContext } from "./rustParser.js";
 import { Loop_stmtContext } from "./rustParser.js";
 import { Break_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
+import { Struct_declContext } from "./rustParser.js";
+import { Field_listContext } from "./rustParser.js";
+import { Field_init_listContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
+import { StructInitContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
+import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
@@ -111,12 +116,37 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitBlock?: (ctx: BlockContext) => Result;
     /**
+     * Visit a parse tree produced by `rustParser.struct_decl`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStruct_decl?: (ctx: Struct_declContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.field_list`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitField_list?: (ctx: Field_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.field_init_list`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitField_init_list?: (ctx: Field_init_listContext) => Result;
+    /**
      * Visit a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitAdd?: (ctx: AddContext) => Result;
+    /**
+     * Visit a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStructInit?: (ctx: StructInitContext) => Result;
     /**
      * Visit a parse tree produced by the `functionCall`
      * labeled alternative in `rustParser.expression`.
@@ -131,6 +161,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitSubtract?: (ctx: SubtractContext) => Result;
+    /**
+     * Visit a parse tree produced by the `fieldAccess`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFieldAccess?: (ctx: FieldAccessContext) => Result;
     /**
      * Visit a parse tree produced by the `variableReference`
      * labeled alternative in `rustParser.expression`.

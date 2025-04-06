@@ -15,9 +15,14 @@ import { For_stmtContext } from "./rustParser.js";
 import { Loop_stmtContext } from "./rustParser.js";
 import { Break_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
+import { Struct_declContext } from "./rustParser.js";
+import { Field_listContext } from "./rustParser.js";
+import { Field_init_listContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
+import { StructInitContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
+import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
@@ -156,6 +161,36 @@ export class rustListener implements ParseTreeListener {
      */
     exitBlock?: (ctx: BlockContext) => void;
     /**
+     * Enter a parse tree produced by `rustParser.struct_decl`.
+     * @param ctx the parse tree
+     */
+    enterStruct_decl?: (ctx: Struct_declContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.struct_decl`.
+     * @param ctx the parse tree
+     */
+    exitStruct_decl?: (ctx: Struct_declContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.field_list`.
+     * @param ctx the parse tree
+     */
+    enterField_list?: (ctx: Field_listContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.field_list`.
+     * @param ctx the parse tree
+     */
+    exitField_list?: (ctx: Field_listContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.field_init_list`.
+     * @param ctx the parse tree
+     */
+    enterField_init_list?: (ctx: Field_init_listContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.field_init_list`.
+     * @param ctx the parse tree
+     */
+    exitField_init_list?: (ctx: Field_init_listContext) => void;
+    /**
      * Enter a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -167,6 +202,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitAdd?: (ctx: AddContext) => void;
+    /**
+     * Enter a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterStructInit?: (ctx: StructInitContext) => void;
+    /**
+     * Exit a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitStructInit?: (ctx: StructInitContext) => void;
     /**
      * Enter a parse tree produced by the `functionCall`
      * labeled alternative in `rustParser.expression`.
@@ -191,6 +238,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitSubtract?: (ctx: SubtractContext) => void;
+    /**
+     * Enter a parse tree produced by the `fieldAccess`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterFieldAccess?: (ctx: FieldAccessContext) => void;
+    /**
+     * Exit a parse tree produced by the `fieldAccess`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitFieldAccess?: (ctx: FieldAccessContext) => void;
     /**
      * Enter a parse tree produced by the `variableReference`
      * labeled alternative in `rustParser.expression`.

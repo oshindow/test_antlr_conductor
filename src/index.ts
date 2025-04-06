@@ -16,14 +16,22 @@ for i in 1..5 {
 }
 sum
 
-let mut counter = 0 
-loop {
-    counter = counter + 1 
-    if counter == 10 {
-        break 
-    }
+struct User {
+    username,
+    email,
+    sign_in_count,
+    active
 }
-counter 
+
+let user1 = User {
+    username: "name",
+    email: "email@example.com",
+    sign_in_count: 1,
+    active: true
+};
+
+user1.username;
+
 
 `;
 const inputStream = CharStream.fromString(input);

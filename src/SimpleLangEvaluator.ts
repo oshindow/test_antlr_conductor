@@ -28,6 +28,18 @@ class ReturnValue {
 
 class BreakSignal {}
 
+// struct-related
+interface StructField {
+    name: string;
+}
+
+interface StructDef {
+    fields: string[];
+}
+
+type StructInstance = Map<string, any>;
+
+
 export class MyVisitor extends rustVisitor<any> {
     private variables: Map<string, Variable> = new Map();
     private envStack: Environment[] = [new Map()];
@@ -45,6 +57,9 @@ export class MyVisitor extends rustVisitor<any> {
         throw new Error(`Variable '${name}' not found`);
     }
     
+    private structDefs: Map<string, StructDef> = new Map();
+
+
     public visitStart = (ctx: any): number => {
         let result = 0;
         for (let i = 0; i < ctx.statement().length; i++) {
@@ -227,6 +242,55 @@ export class MyVisitor extends rustVisitor<any> {
         throw new BreakSignal();
     };
 
+    
+    public visitStruct_decl = (ctx: any): null => {
+        const structName = ctx.identifier().IDENTIFIER().getText();
+        const fields: string[] = [];
+    
+        if (ctx.field_list()) {
+            const ids = ctx.field_list().identifier();
+            for (const id of ids) {
+                fields.push(id.IDENTIFIER().getText());
+            }
+        }
+    
+        this.structDefs.set(structName, { fields });
+        return null;
+    };
+    
+    public visitStructInit = (ctx: any): StructInstance => {
+        const structName = ctx.identifier().IDENTIFIER().getText();
+        const def = this.structDefs.get(structName);
+        if (!def) throw new Error(`Struct '${structName}' is not defined`);
+    
+        const instance: StructInstance = new Map();
+    
+        if (ctx.field_init_list()) {
+            const entries = ctx.field_init_list().children;
+            for (let i = 0; i < entries.length; i += 3) { // id : expr , id : expr ...
+                const fieldName = entries[i].getText();
+                const value = this.visit(entries[i + 2]);
+                instance.set(fieldName, value);
+            }
+        }
+    
+        return instance;
+    };
+    
+    public visitFieldAccess = (ctx: any): any => {
+        const obj = this.visit(ctx.expression());  
+        const field = ctx.identifier().IDENTIFIER().getText();
+    
+        if (!(obj instanceof Map)) {
+            throw new Error("Trying to access field on non-struct");
+        }
+    
+        if (!obj.has(field)) {
+            throw new Error(`Field '${field}' does not exist`);
+        }
+    
+        return obj.get(field);
+    };
     
     public visitReturn_stmt = (ctx: any): never => {
         const value = this.visit(ctx.expression());
