@@ -62,7 +62,7 @@ struct_decl:
 ;
 
 field_list:
-    identifier (':' identifier)? (',' identifier (':' identifier)?)* 
+    identifier (',' identifier)*
 ;
 
 field_init_list:
@@ -81,6 +81,8 @@ expression:
     | LPAREN expression RPAREN  # parenExpr
     | identifier '{' field_init_list? '}'  # structInit
     | expression '.' identifier              # fieldAccess
+    | STRING             # stringLiteral
+    | BOOL               # boolLiteral
     ;
 
 MUT:
@@ -91,6 +93,12 @@ ty:
     number
     | 'bool'
     ;
+
+STRING: '"' (~["\\] | '\\' .)*? '"'
+;
+
+BOOL: 'true' | 'false'
+;
 
 identifier: 
     IDENTIFIER
@@ -111,6 +119,8 @@ number:
 NUMBER:
     [0-9]+
 ;
+
+
 
 WS:
     [ \t\r\n]+ -> skip

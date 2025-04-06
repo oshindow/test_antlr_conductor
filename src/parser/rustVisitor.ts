@@ -19,16 +19,18 @@ import { Struct_declContext } from "./rustParser.js";
 import { Field_listContext } from "./rustParser.js";
 import { Field_init_listContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
-import { StructInitContext } from "./rustParser.js";
-import { FunctionCallContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
+import { BoolLiteralContext } from "./rustParser.js";
+import { ParenExprContext } from "./rustParser.js";
+import { StructInitContext } from "./rustParser.js";
+import { StringLiteralContext } from "./rustParser.js";
+import { FunctionCallContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
-import { ParenExprContext } from "./rustParser.js";
 import { TyContext } from "./rustParser.js";
 import { IdentifierContext } from "./rustParser.js";
 import { Argument_listContext } from "./rustParser.js";
@@ -141,20 +143,6 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitAdd?: (ctx: AddContext) => Result;
     /**
-     * Visit a parse tree produced by the `structInit`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitStructInit?: (ctx: StructInitContext) => Result;
-    /**
-     * Visit a parse tree produced by the `functionCall`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFunctionCall?: (ctx: FunctionCallContext) => Result;
-    /**
      * Visit a parse tree produced by the `subtract`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -183,6 +171,41 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitSimple?: (ctx: SimpleContext) => Result;
     /**
+     * Visit a parse tree produced by the `boolLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBoolLiteral?: (ctx: BoolLiteralContext) => Result;
+    /**
+     * Visit a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitParenExpr?: (ctx: ParenExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStructInit?: (ctx: StructInitContext) => Result;
+    /**
+     * Visit a parse tree produced by the `stringLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStringLiteral?: (ctx: StringLiteralContext) => Result;
+    /**
+     * Visit a parse tree produced by the `functionCall`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFunctionCall?: (ctx: FunctionCallContext) => Result;
+    /**
      * Visit a parse tree produced by the `divide`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -203,13 +226,6 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitMultiply?: (ctx: MultiplyContext) => Result;
-    /**
-     * Visit a parse tree produced by the `parenExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitParenExpr?: (ctx: ParenExprContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.ty`.
      * @param ctx the parse tree

@@ -24,14 +24,14 @@ struct User {
 }
 
 let user1 = User {
-    username: "name",
+    username: "xintong",
     email: "email@example.com",
     sign_in_count: 1,
     active: true
-};
+} 
 
-user1.username;
-
+user1.username 
+user1
 
 `;
 const inputStream = CharStream.fromString(input);

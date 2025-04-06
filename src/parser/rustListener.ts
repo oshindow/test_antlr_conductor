@@ -19,16 +19,18 @@ import { Struct_declContext } from "./rustParser.js";
 import { Field_listContext } from "./rustParser.js";
 import { Field_init_listContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
-import { StructInitContext } from "./rustParser.js";
-import { FunctionCallContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
+import { BoolLiteralContext } from "./rustParser.js";
+import { ParenExprContext } from "./rustParser.js";
+import { StructInitContext } from "./rustParser.js";
+import { StringLiteralContext } from "./rustParser.js";
+import { FunctionCallContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
-import { ParenExprContext } from "./rustParser.js";
 import { TyContext } from "./rustParser.js";
 import { IdentifierContext } from "./rustParser.js";
 import { Argument_listContext } from "./rustParser.js";
@@ -203,30 +205,6 @@ export class rustListener implements ParseTreeListener {
      */
     exitAdd?: (ctx: AddContext) => void;
     /**
-     * Enter a parse tree produced by the `structInit`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    enterStructInit?: (ctx: StructInitContext) => void;
-    /**
-     * Exit a parse tree produced by the `structInit`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    exitStructInit?: (ctx: StructInitContext) => void;
-    /**
-     * Enter a parse tree produced by the `functionCall`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    enterFunctionCall?: (ctx: FunctionCallContext) => void;
-    /**
-     * Exit a parse tree produced by the `functionCall`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    exitFunctionCall?: (ctx: FunctionCallContext) => void;
-    /**
      * Enter a parse tree produced by the `subtract`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -275,6 +253,66 @@ export class rustListener implements ParseTreeListener {
      */
     exitSimple?: (ctx: SimpleContext) => void;
     /**
+     * Enter a parse tree produced by the `boolLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterBoolLiteral?: (ctx: BoolLiteralContext) => void;
+    /**
+     * Exit a parse tree produced by the `boolLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitBoolLiteral?: (ctx: BoolLiteralContext) => void;
+    /**
+     * Enter a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterParenExpr?: (ctx: ParenExprContext) => void;
+    /**
+     * Exit a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitParenExpr?: (ctx: ParenExprContext) => void;
+    /**
+     * Enter a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterStructInit?: (ctx: StructInitContext) => void;
+    /**
+     * Exit a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitStructInit?: (ctx: StructInitContext) => void;
+    /**
+     * Enter a parse tree produced by the `stringLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterStringLiteral?: (ctx: StringLiteralContext) => void;
+    /**
+     * Exit a parse tree produced by the `stringLiteral`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitStringLiteral?: (ctx: StringLiteralContext) => void;
+    /**
+     * Enter a parse tree produced by the `functionCall`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterFunctionCall?: (ctx: FunctionCallContext) => void;
+    /**
+     * Exit a parse tree produced by the `functionCall`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitFunctionCall?: (ctx: FunctionCallContext) => void;
+    /**
      * Enter a parse tree produced by the `divide`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -310,18 +348,6 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitMultiply?: (ctx: MultiplyContext) => void;
-    /**
-     * Enter a parse tree produced by the `parenExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    enterParenExpr?: (ctx: ParenExprContext) => void;
-    /**
-     * Exit a parse tree produced by the `parenExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    exitParenExpr?: (ctx: ParenExprContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.ty`.
      * @param ctx the parse tree

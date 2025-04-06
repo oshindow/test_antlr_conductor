@@ -95,6 +95,16 @@ export class MyVisitor extends rustVisitor<any> {
         return this.visit(ctx.getChild(1)!);
     }
 
+    public visitStringLiteral = (ctx: any): string => {
+        const text = ctx.STRING().getText();
+        return text.slice(1, -1); 
+    };
+    
+    public visitBoolLiteral = (ctx: any): boolean => {
+        return ctx.getText() === 'true';
+    };
+    
+
     public visitLet_stmt = (ctx: Let_stmtContext): number => {
         const name = ctx.identifier().IDENTIFIER().getText();
         const isMutable = ctx.MUT() !== undefined;
