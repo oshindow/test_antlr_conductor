@@ -15,8 +15,42 @@ interface Variable {
     mutable: boolean;
 }
 
+type Environment = Map<string, Variable>;
+
+interface FunctionDef {
+    params: string[];
+    body: any; // block AST node
+}
+
+class ReturnValue {
+    constructor(public value: number) {}
+}
+
+
 export class MyVisitor extends rustVisitor<any> {
     private variables: Map<string, Variable> = new Map();
+    private envStack: Environment[] = [new Map()];
+    private functions: Map<string, FunctionDef> = new Map();
+
+    private get currentEnv(): Environment {
+        return this.envStack[this.envStack.length - 1];
+    }
+    
+    private resolveVariable(name: string): Variable {
+        for (let i = this.envStack.length - 1; i >= 0; i--) {
+            const env = this.envStack[i];
+            if (env.has(name)) return env.get(name)!;
+        }
+        throw new Error(`Variable '${name}' not found`);
+    }
+    
+    public visitStart = (ctx: any): number => {
+        let result = 0;
+        for (let i = 0; i < ctx.statement().length; i++) {
+            result = this.visit(ctx.statement(i));
+        }
+        return result;
+    }
 
     public visitAdd = (ctx: AddContext): number => {
         return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
@@ -45,31 +79,123 @@ export class MyVisitor extends rustVisitor<any> {
         return this.visit(ctx.getChild(1)!);
     }
 
-    public visitLetStatement = (ctx: Let_stmtContext): number => {
-        const identifier = ctx.identifier().getText();
+    public visitLet_stmt = (ctx: Let_stmtContext): number => {
+        const name = ctx.identifier().IDENTIFIER().getText();
         const isMutable = ctx.MUT() !== undefined;
-        const initializer = ctx.expression() ? this.visit(ctx.expression()!) : 0;
+        const value = ctx.expression() ? this.visit(ctx.expression()) : 0;
 
-        if (this.variables.has(identifier)) {
-            if (!this.variables.get(identifier)!.mutable) {
-                throw new Error(`Cannot reassign immutable variable '${identifier}'`);
-            }
-        }
+        const currentEnv = this.envStack[this.envStack.length - 1];
+        currentEnv.set(name, { value, mutable: isMutable });
 
-        this.variables.set(identifier, { value: initializer, mutable: isMutable });
-        return initializer;
+        return value;
     };
 
     public visitVariableReference = (ctx: any): number => {
-        const identifier = ctx.IDENTIFIER().getText();
-        const variable = this.variables.get(identifier);
+        const name = ctx.identifier().IDENTIFIER().getText();
+        const variable = this.resolveVariable(name);
 
         if (!variable) {
-            throw new Error(`Variable '${identifier}' is not defined`);
+            throw new Error(`Variable '${name}' is not defined`);
         }
 
         return variable.value;
     };
+
+    // function related
+    public visitFunction_decl = (ctx: any): null => {
+        const name = ctx.identifier().IDENTIFIER().getText();
+        // console.log(name)
+        const paramList = ctx.parameter_list()?.identifier() || [];
+        // console.log(paramList)
+        const params = paramList.map((id: any) => id.IDENTIFIER().getText());
+        // console.log(params)
+        const body = ctx.block();
+        this.functions.set(name, { params, body });
+        return null;
+    }
+
+    public visitFunctionCall = (ctx: any): number => {
+        const name = ctx.identifier().IDENTIFIER().getText();
+        // console.log(name)
+        const func = this.functions.get(name);
+        if (!func) throw new Error(`Function '${name}' not found`);
+    
+        const args = ctx.argument_list()?.expression().map(e => this.visit(e)) || [];
+        // console.log(args)
+        if (args.length !== func.params.length) {
+            throw new Error(`Function '${name}' expects ${func.params.length} arguments`);
+        }
+        
+        const newEnv = new Map<string, Variable>();
+        for (let i = 0; i < args.length; i++) {
+            newEnv.set(func.params[i], { value: args[i], mutable: false });
+        }
+        // console.log(newEnv)
+        this.envStack.push(newEnv);
+        try {
+            this.executeBlockWithEnv(func.body, newEnv);
+        } catch (e) {
+            if (e instanceof ReturnValue) {
+                this.envStack.pop();
+                return e.value;
+            } else {
+                this.envStack.pop();
+                throw e;
+            }
+        }
+    
+        this.envStack.pop();
+        return 0;  
+    }
+    private executeBlockWithEnv = (ctx: any, env: Map<string, Variable>): number => {
+        // console.log(env)
+        // console.log(this.envStack)
+        this.envStack.push(env);
+        // console.log(this.envStack)
+        let result = 0;
+        // console.log(ctx.statement())        
+        for (let i = 0; i < ctx.statement().length; i++) {
+            result = this.visit(ctx.statement(i));
+            // console.log(result) 
+        }
+        // console.log(result)        
+        if (ctx.expression()) {
+            result = this.visit(ctx.expression());
+        }
+    
+        this.envStack.pop();
+        return result;
+    }
+    
+    // public visitBlock = (ctx: any, pushScope = true): number => {
+    //     if (pushScope) {
+    //         const newEnv = new Map<string, Variable>();
+    //         this.envStack.push(newEnv);
+    //     }
+        
+    //     let result: number = 0;
+    //     for (let i = 0; i < ctx.statement().length; i++) {
+    //         // console.log(ctx.statement(i))
+    //         result = this.visit(ctx.statement(i));
+    //         console.log("result")
+    //     }
+    
+    //     if (ctx.expression()) {
+    //         result = this.visit(ctx.expression());
+    //     }
+    
+    //     if (pushScope) {
+    //         this.envStack.pop();
+    //     }
+    //     return result;
+    // }
+
+    public visitReturn_stmt = (ctx: any): never => {
+        const value = this.visit(ctx.expression());
+        throw new ReturnValue(value);
+    }
+    
+    
 
 }
 

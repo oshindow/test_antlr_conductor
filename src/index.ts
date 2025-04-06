@@ -5,7 +5,13 @@ import { MyVisitor } from "./SimpleLangEvaluator.js";
 //import { ThrowingErrorListener } from "./ErrorListener.js";  
 
 
-const input = "let mut x = 8;\nx+1;";
+const input = `
+fn add(a, b) {
+    return a + b + 2
+}
+let x = add(10, 20)
+x + 5
+`;
 const inputStream = CharStream.fromString(input);
 const lexer = new rustLexer(inputStream);
 // lexer.removeErrorListeners();
