@@ -5,11 +5,15 @@ import { ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode } from "a
 
 import { StartContext } from "./rustParser.js";
 import { StatementContext } from "./rustParser.js";
-import { Expression_stmtContext } from "./rustParser.js";
-import { Return_stmtContext } from "./rustParser.js";
 import { Let_stmtContext } from "./rustParser.js";
+import { Assign_stmtContext } from "./rustParser.js";
+import { Return_stmtContext } from "./rustParser.js";
+import { Expression_stmtContext } from "./rustParser.js";
 import { Function_declContext } from "./rustParser.js";
 import { Parameter_listContext } from "./rustParser.js";
+import { For_stmtContext } from "./rustParser.js";
+import { Loop_stmtContext } from "./rustParser.js";
+import { Break_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
@@ -52,15 +56,25 @@ export class rustListener implements ParseTreeListener {
      */
     exitStatement?: (ctx: StatementContext) => void;
     /**
-     * Enter a parse tree produced by `rustParser.expression_stmt`.
+     * Enter a parse tree produced by `rustParser.let_stmt`.
      * @param ctx the parse tree
      */
-    enterExpression_stmt?: (ctx: Expression_stmtContext) => void;
+    enterLet_stmt?: (ctx: Let_stmtContext) => void;
     /**
-     * Exit a parse tree produced by `rustParser.expression_stmt`.
+     * Exit a parse tree produced by `rustParser.let_stmt`.
      * @param ctx the parse tree
      */
-    exitExpression_stmt?: (ctx: Expression_stmtContext) => void;
+    exitLet_stmt?: (ctx: Let_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.assign_stmt`.
+     * @param ctx the parse tree
+     */
+    enterAssign_stmt?: (ctx: Assign_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.assign_stmt`.
+     * @param ctx the parse tree
+     */
+    exitAssign_stmt?: (ctx: Assign_stmtContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.return_stmt`.
      * @param ctx the parse tree
@@ -72,15 +86,15 @@ export class rustListener implements ParseTreeListener {
      */
     exitReturn_stmt?: (ctx: Return_stmtContext) => void;
     /**
-     * Enter a parse tree produced by `rustParser.let_stmt`.
+     * Enter a parse tree produced by `rustParser.expression_stmt`.
      * @param ctx the parse tree
      */
-    enterLet_stmt?: (ctx: Let_stmtContext) => void;
+    enterExpression_stmt?: (ctx: Expression_stmtContext) => void;
     /**
-     * Exit a parse tree produced by `rustParser.let_stmt`.
+     * Exit a parse tree produced by `rustParser.expression_stmt`.
      * @param ctx the parse tree
      */
-    exitLet_stmt?: (ctx: Let_stmtContext) => void;
+    exitExpression_stmt?: (ctx: Expression_stmtContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.function_decl`.
      * @param ctx the parse tree
@@ -101,6 +115,36 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitParameter_list?: (ctx: Parameter_listContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.for_stmt`.
+     * @param ctx the parse tree
+     */
+    enterFor_stmt?: (ctx: For_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.for_stmt`.
+     * @param ctx the parse tree
+     */
+    exitFor_stmt?: (ctx: For_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.loop_stmt`.
+     * @param ctx the parse tree
+     */
+    enterLoop_stmt?: (ctx: Loop_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.loop_stmt`.
+     * @param ctx the parse tree
+     */
+    exitLoop_stmt?: (ctx: Loop_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.break_stmt`.
+     * @param ctx the parse tree
+     */
+    enterBreak_stmt?: (ctx: Break_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.break_stmt`.
+     * @param ctx the parse tree
+     */
+    exitBreak_stmt?: (ctx: Break_stmtContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.block`.
      * @param ctx the parse tree

@@ -26,6 +26,7 @@ class ReturnValue {
     constructor(public value: number) {}
 }
 
+class BreakSignal {}
 
 export class MyVisitor extends rustVisitor<any> {
     private variables: Map<string, Variable> = new Map();
@@ -167,29 +168,66 @@ export class MyVisitor extends rustVisitor<any> {
         return result;
     }
     
-    // public visitBlock = (ctx: any, pushScope = true): number => {
-    //     if (pushScope) {
-    //         const newEnv = new Map<string, Variable>();
-    //         this.envStack.push(newEnv);
-    //     }
-        
-    //     let result: number = 0;
-    //     for (let i = 0; i < ctx.statement().length; i++) {
-    //         // console.log(ctx.statement(i))
-    //         result = this.visit(ctx.statement(i));
-    //         console.log("result")
-    //     }
+    public visitFor_stmt = (ctx: any): number => {
+        const varName = ctx.identifier().IDENTIFIER().getText();
+        const start = this.visit(ctx.expression(0));
+        const end = this.visit(ctx.expression(1));
+        let result = 0;
     
-    //     if (ctx.expression()) {
-    //         result = this.visit(ctx.expression());
-    //     }
+        for (let i = start; i < end; i++) {
+            const loopEnv = new Map<string, Variable>();
+            loopEnv.set(varName, { value: i, mutable: true });
     
-    //     if (pushScope) {
-    //         this.envStack.pop();
-    //     }
-    //     return result;
-    // }
+            this.envStack.push(loopEnv);
+            result = this.visit(ctx.block());
+            this.envStack.pop();
+        }
+    
+        return result;
+    };
+    
+    public visitAssign_stmt = (ctx: any): number => {
+        const name = ctx.identifier().IDENTIFIER().getText();
+        const value = this.visit(ctx.expression());
+    
+        for (let i = this.envStack.length - 1; i >= 0; i--) {
+            const env = this.envStack[i];
+            if (env.has(name)) {
+                const variable = env.get(name)!;
+                if (!variable.mutable) {
+                    throw new Error(`Cannot assign to immutable variable '${name}'`);
+                }
+                variable.value = value;
+                return value;
+            }
+        }
+    
+        throw new Error(`Variable '${name}' not found`);
+    };
 
+    public visitLoop_stmt = (ctx: any): number => {
+        let result = 0;
+    
+        while (true) {
+            try {
+                result = this.visit(ctx.block());
+            } catch (e) {
+                if (e instanceof BreakSignal) {
+                    break;
+                } else {
+                    throw e;
+                }
+            }
+        }
+    
+        return result;
+    };
+    
+    public visitBreak_stmt = (ctx: any): never => {
+        throw new BreakSignal();
+    };
+
+    
     public visitReturn_stmt = (ctx: any): never => {
         const value = this.visit(ctx.expression());
         throw new ReturnValue(value);

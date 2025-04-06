@@ -7,10 +7,24 @@ import { MyVisitor } from "./SimpleLangEvaluator.js";
 
 const input = `
 fn add(a, b) {
-    return a + b + 2
+    return a + b  
 }
-let x = add(10, 20)
-x + 5
+
+let sum = 0
+for i in 1..5 {    
+    sum = add(i, sum)
+}
+sum
+
+let mut counter = 0 
+loop {
+    counter = counter + 1 
+    if counter == 10 {
+        break 
+    }
+}
+counter 
+
 `;
 const inputStream = CharStream.fromString(input);
 const lexer = new rustLexer(inputStream);

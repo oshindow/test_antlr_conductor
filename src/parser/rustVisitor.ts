@@ -5,11 +5,15 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 
 import { StartContext } from "./rustParser.js";
 import { StatementContext } from "./rustParser.js";
-import { Expression_stmtContext } from "./rustParser.js";
-import { Return_stmtContext } from "./rustParser.js";
 import { Let_stmtContext } from "./rustParser.js";
+import { Assign_stmtContext } from "./rustParser.js";
+import { Return_stmtContext } from "./rustParser.js";
+import { Expression_stmtContext } from "./rustParser.js";
 import { Function_declContext } from "./rustParser.js";
 import { Parameter_listContext } from "./rustParser.js";
+import { For_stmtContext } from "./rustParser.js";
+import { Loop_stmtContext } from "./rustParser.js";
+import { Break_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
@@ -47,11 +51,17 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitStatement?: (ctx: StatementContext) => Result;
     /**
-     * Visit a parse tree produced by `rustParser.expression_stmt`.
+     * Visit a parse tree produced by `rustParser.let_stmt`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitExpression_stmt?: (ctx: Expression_stmtContext) => Result;
+    visitLet_stmt?: (ctx: Let_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.assign_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAssign_stmt?: (ctx: Assign_stmtContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.return_stmt`.
      * @param ctx the parse tree
@@ -59,11 +69,11 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitReturn_stmt?: (ctx: Return_stmtContext) => Result;
     /**
-     * Visit a parse tree produced by `rustParser.let_stmt`.
+     * Visit a parse tree produced by `rustParser.expression_stmt`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitLet_stmt?: (ctx: Let_stmtContext) => Result;
+    visitExpression_stmt?: (ctx: Expression_stmtContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.function_decl`.
      * @param ctx the parse tree
@@ -76,6 +86,24 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitParameter_list?: (ctx: Parameter_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.for_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFor_stmt?: (ctx: For_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.loop_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitLoop_stmt?: (ctx: Loop_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.break_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBreak_stmt?: (ctx: Break_stmtContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.block`.
      * @param ctx the parse tree

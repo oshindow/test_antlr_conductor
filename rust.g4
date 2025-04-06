@@ -6,22 +6,30 @@ start:
 
 statement:
     let_stmt
+    | assign_stmt
     | return_stmt
     | expression_stmt
     | function_decl
+    | for_stmt  
+    | loop_stmt
+    | break_stmt
     | block
 ;
 
-expression_stmt:
-    expression
+let_stmt: 
+    'let' (MUT)? identifier (':' ty)? ('=' expression)?
+;
+
+assign_stmt:
+    identifier '=' expression
 ;
 
 return_stmt:
     'return' expression
 ;
-   
-let_stmt: 
-    'let' (MUT)? identifier (':' ty)? ('=' expression)?
+
+expression_stmt:
+    expression
 ;
 
 function_decl:
@@ -30,6 +38,18 @@ function_decl:
 
 parameter_list:
     identifier (',' identifier)*
+;
+
+for_stmt:
+    'for' identifier 'in' expression '..' expression block
+;
+
+loop_stmt:
+    'loop' block
+;
+
+break_stmt:
+    'break'
 ;
 
 block:
