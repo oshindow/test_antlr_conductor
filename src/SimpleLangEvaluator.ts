@@ -75,6 +75,30 @@ export class MyVisitor extends rustVisitor<any> {
         return result;
     }
 
+    public visitEqual = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) === this.visit(ctx.expression(1));
+    };
+    
+    public visitNotEqual = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) !== this.visit(ctx.expression(1));
+    };
+    
+    public visitLessThan = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) < this.visit(ctx.expression(1));
+    };
+    
+    public visitLessEqual = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) <= this.visit(ctx.expression(1));
+    };
+    
+    public visitGreaterThan = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) > this.visit(ctx.expression(1));
+    };
+    
+    public visitGreaterEqual = (ctx: any): boolean => {
+        return this.visit(ctx.expression(0)) >= this.visit(ctx.expression(1));
+    };    
+
     public visitAdd = (ctx: AddContext): number => {
         return this.visit(ctx.expression(0)!)! + this.visit(ctx.expression(1)!)!;
     };
@@ -264,6 +288,38 @@ export class MyVisitor extends rustVisitor<any> {
         throw new BreakSignal();
     };
 
+    public visitIf_stmt = (ctx: any): any => {
+        const condition = this.visit(ctx.expression());
+    
+        if (condition) {
+            return this.visit(ctx.block(0)); // then block
+        } else if (ctx.KW_ELSE()) {
+            const elseBlock = ctx.block(1);
+            const elseIf = ctx.if_stmt();
+    
+            if (elseBlock) {
+                return this.visit(elseBlock); // else block
+            } else if (elseIf) {
+                return this.visit(elseIf); // nested if
+            }
+        }
+    
+        return null;
+    };
+
+    public visitWhile_stmt = (ctx: any): any => {
+        while (this.visit(ctx.expression())) {
+            const result = this.visit(ctx.block());
+    
+            // Optional: support break with a `BreakSignal`
+            if (result instanceof BreakSignal) {
+                break;
+            }
+        }
+    
+        return null;
+    };
+    
     
     public visitStruct_decl = (ctx: any): null => {
         const structName = ctx.identifier().IDENTIFIER().getText();
@@ -340,7 +396,7 @@ export class MyVisitor extends rustVisitor<any> {
         return `${enumName}::${variant}`;
     };
     
-    
+
     public visitMatchExpr = (ctx: any): number => {
         const value = this.visit(ctx.expression()); 
         const arms = ctx.match_arm_list().match_arm();
@@ -360,8 +416,6 @@ export class MyVisitor extends rustVisitor<any> {
     
         throw new Error("No match arm matched");
     };
-    
-    
     
     public visitMatch_pattern = (ctx: any): any => {
         if (ctx.NUMBER()) return Number(ctx.NUMBER().getText());

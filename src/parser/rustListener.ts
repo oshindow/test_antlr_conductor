@@ -21,21 +21,29 @@ import { Field_listContext } from "./rustParser.js";
 import { Field_init_listContext } from "./rustParser.js";
 import { Enum_declContext } from "./rustParser.js";
 import { Variant_listContext } from "./rustParser.js";
+import { While_stmtContext } from "./rustParser.js";
+import { If_stmtContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
 import { MatchExprContext } from "./rustParser.js";
+import { NotEqualContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
+import { EqualContext } from "./rustParser.js";
 import { StructInitContext } from "./rustParser.js";
 import { StringLiteralContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
+import { LessThanContext } from "./rustParser.js";
+import { GreaterEqualContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
 import { EnumAccessContext } from "./rustParser.js";
+import { LessEqualContext } from "./rustParser.js";
 import { MultiplyContext } from "./rustParser.js";
+import { GreaterThanContext } from "./rustParser.js";
 import { TyContext } from "./rustParser.js";
 import { IdentifierContext } from "./rustParser.js";
 import { Argument_listContext } from "./rustParser.js";
@@ -233,6 +241,26 @@ export class rustListener implements ParseTreeListener {
      */
     exitVariant_list?: (ctx: Variant_listContext) => void;
     /**
+     * Enter a parse tree produced by `rustParser.while_stmt`.
+     * @param ctx the parse tree
+     */
+    enterWhile_stmt?: (ctx: While_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.while_stmt`.
+     * @param ctx the parse tree
+     */
+    exitWhile_stmt?: (ctx: While_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.if_stmt`.
+     * @param ctx the parse tree
+     */
+    enterIf_stmt?: (ctx: If_stmtContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.if_stmt`.
+     * @param ctx the parse tree
+     */
+    exitIf_stmt?: (ctx: If_stmtContext) => void;
+    /**
      * Enter a parse tree produced by the `add`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -293,6 +321,18 @@ export class rustListener implements ParseTreeListener {
      */
     exitMatchExpr?: (ctx: MatchExprContext) => void;
     /**
+     * Enter a parse tree produced by the `notEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterNotEqual?: (ctx: NotEqualContext) => void;
+    /**
+     * Exit a parse tree produced by the `notEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitNotEqual?: (ctx: NotEqualContext) => void;
+    /**
      * Enter a parse tree produced by the `simple`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -328,6 +368,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitParenExpr?: (ctx: ParenExprContext) => void;
+    /**
+     * Enter a parse tree produced by the `equal`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterEqual?: (ctx: EqualContext) => void;
+    /**
+     * Exit a parse tree produced by the `equal`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitEqual?: (ctx: EqualContext) => void;
     /**
      * Enter a parse tree produced by the `structInit`
      * labeled alternative in `rustParser.expression`.
@@ -365,6 +417,30 @@ export class rustListener implements ParseTreeListener {
      */
     exitFunctionCall?: (ctx: FunctionCallContext) => void;
     /**
+     * Enter a parse tree produced by the `lessThan`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterLessThan?: (ctx: LessThanContext) => void;
+    /**
+     * Exit a parse tree produced by the `lessThan`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitLessThan?: (ctx: LessThanContext) => void;
+    /**
+     * Enter a parse tree produced by the `greaterEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterGreaterEqual?: (ctx: GreaterEqualContext) => void;
+    /**
+     * Exit a parse tree produced by the `greaterEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitGreaterEqual?: (ctx: GreaterEqualContext) => void;
+    /**
      * Enter a parse tree produced by the `divide`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -401,6 +477,18 @@ export class rustListener implements ParseTreeListener {
      */
     exitEnumAccess?: (ctx: EnumAccessContext) => void;
     /**
+     * Enter a parse tree produced by the `lessEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterLessEqual?: (ctx: LessEqualContext) => void;
+    /**
+     * Exit a parse tree produced by the `lessEqual`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitLessEqual?: (ctx: LessEqualContext) => void;
+    /**
      * Enter a parse tree produced by the `multiply`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -412,6 +500,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitMultiply?: (ctx: MultiplyContext) => void;
+    /**
+     * Enter a parse tree produced by the `greaterThan`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterGreaterThan?: (ctx: GreaterThanContext) => void;
+    /**
+     * Exit a parse tree produced by the `greaterThan`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitGreaterThan?: (ctx: GreaterThanContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.ty`.
      * @param ctx the parse tree

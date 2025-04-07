@@ -16,6 +16,8 @@ statement:
     | block
     | struct_decl 
     | enum_decl
+    | while_stmt
+    | if_stmt
 ;
 
 let_stmt: 
@@ -82,9 +84,23 @@ variant_list:
     identifier (',' identifier)* ','?
 ;
 
+while_stmt:
+    'while' expression block
+;
+
+if_stmt:
+    'if' expression block (KW_ELSE (block | if_stmt))?
+;
+
 
 expression:
-    expression '*' expression   # multiply
+    expression '==' expression   # equal
+    | expression '!=' expression   # notEqual
+    | expression '<' expression    # lessThan
+    | expression '<=' expression   # lessEqual
+    | expression '>' expression    # greaterThan
+    | expression '>=' expression   # greaterEqual
+    | expression '*' expression   # multiply
     | expression '/' expression # divide
     | expression '+' expression # add
     | expression '-' expression # subtract
@@ -103,6 +119,10 @@ expression:
 
 MUT:
     'mut'
+;
+
+KW_ELSE:
+    'else'
 ;
 
 ty: 
