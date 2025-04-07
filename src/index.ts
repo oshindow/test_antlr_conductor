@@ -6,58 +6,58 @@ import { MyVisitor } from "./SimpleLangEvaluator.js";
 
 
 const input = `
-// fn add(a, b) {
-//     return a + b  
-// }
+fn add(a, b) {
+    return a + b  
+}
 
-// let sum = 0
-// for i in 1..5 {    
-//     sum = add(i, sum)
-// }
-// sum
+let sum = 0
+for i in 1..5 {    
+    sum = add(i, sum)
+}
+sum
 
-// struct User {
-//     username,
-//     email,
-//     sign_in_count,
-//     active
-// }
+struct User {
+    username,
+    email,
+    sign_in_count,
+    active
+}
 
-// let user1 = User {
-//     username: "xintong",
-//     email: "email@example.com",
-//     sign_in_count: 1,
-//     active: true
-// } 
+let user1 = User {
+    username: "xintong",
+    email: "email@example.com",
+    sign_in_count: 1,
+    active: true
+} 
 
-// user1.username 
-// user1
+user1.username 
+user1
 
-// enum IpAddrKind {
-//     V4,
-//     V6,
-// }
+enum IpAddrKind {
+    V4,
+    V6,
+}
 
-// let four = IpAddrKind::V4 
-// // let six = IpAddrKind::V6
+let four = IpAddrKind::V4 
+// let six = IpAddrKind::V6
 
-// enum Coin {
-//     Penny,
-//     Nickel,
-//     Dime,
-//     Quarter,
-// }
+enum Coin {
+    Penny,
+    Nickel,
+    Dime,
+    Quarter,
+}
 
-// fn value_in_cents(coin: Coin) -> u8 {
-//     match coin {
-//         Coin::Penny => 1,
-//         Coin::Nickel => 5,
-//         Coin::Dime => 10,
-//         Coin::Quarter => 25,
-//     }
-// }
-// let c = Coin::Dime 
-// value_in_cents(c)
+fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+        Coin::Penny => 1,
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter => 25,
+    }
+}
+let c = Coin::Dime 
+value_in_cents(c)
 
 let mut x = 0
 while x < 3 {
