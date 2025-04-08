@@ -67,34 +67,14 @@ fn main() {
 
 main()
 
-// enum IpAddrKind {
-//     V4,
-//     V6,
-//     user1,
-// }
+fn main() {
+    println!("Hello, world!");
+    another_function();
+}
 
-// let four = IpAddrKind::V4 
-// let six = IpAddrKind::V6
-// let user = IpAddrKind::user1
-
-// user
-// enum Coin {
-//     Penny,
-//     Nickel,
-//     Dime,
-//     Quarter,
-// }
-
-// fn value_in_cents(coin: Coin) -> u8 {
-//     match coin {
-//         Coin::Penny => 1,
-//         Coin::Nickel => 5,
-//         Coin::Dime => 10,
-//         Coin::Quarter => 25,
-//     }
-// }
-// let c = Coin::Dime 
-// value_in_cents(c)
+fn another_function() {
+    println!("Hello, runoob!");
+}
 
 `;
 
