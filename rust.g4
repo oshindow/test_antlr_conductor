@@ -5,14 +5,14 @@ start:
 ;
 
 statement:
-    let_stmt
-    | assign_stmt
-    | return_stmt
-    | expression_stmt
-    | function_decl
+    let_stmt ';'?
+    | assign_stmt ';'?
+    | return_stmt ';'?
+    | expression_stmt ';'?
+    | function_decl 
     | for_stmt  
     | loop_stmt
-    | break_stmt
+    | break_stmt ';'?
     | block
     | struct_decl 
     | enum_decl
@@ -69,11 +69,19 @@ struct_decl:
 ;
 
 field_list:
-    identifier (',' identifier)*
+    field_decl (',' field_decl)* ','?
+;
+
+field_decl:
+    identifier ':' ty
 ;
 
 field_init_list:
-    identifier ':' expression (',' identifier ':' expression)*
+    field_init (',' field_init)* ','?
+;
+
+field_init:
+    identifier ':' expression
 ;
 
 enum_decl:
@@ -81,7 +89,12 @@ enum_decl:
 ;
 
 variant_list:
-    identifier (',' identifier)* ','?
+    variant (',' variant)* ','?
+;
+
+variant:
+    identifier                             # simpleVariant
+    | identifier '{' field_list? '}'       # structVariant
 ;
 
 while_stmt:
@@ -115,6 +128,7 @@ expression:
     | BOOL               # boolLiteral
     | identifier '::' identifier    # enumAccess
     | 'match' expression '{' match_arm_list '}'   # matchExpr
+    | identifier '::' identifier '{' field_init_list? '}'    # enumStructInit
     ;
 
 MUT:
@@ -126,8 +140,13 @@ KW_ELSE:
 ;
 
 ty: 
-    number
+    'i32'
+    | 'u32'
+    | 'f64'
     | 'bool'
+    | 'char'
+    | 'String' 
+    | identifier
     ;
 
 STRING: '"' (~["\\] | '\\' .)*? '"'
@@ -161,9 +180,14 @@ match_arm:
 ;
 
 match_pattern:
-      NUMBER
+    NUMBER
     | '_'
-    | identifier '::' identifier
+    | identifier '::' identifier                     
+    | identifier '::' identifier '{' pattern_list '}'  
+    ;
+
+pattern_list:
+    identifier (',' identifier)* ','?
 ;
 
 NUMBER:

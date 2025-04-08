@@ -13,6 +13,7 @@ import { Trees } from 'antlr4ng';
 interface Variable {
     value: number;
     mutable: boolean;
+    type?: string;
 }
 
 type Environment = Map<string, Variable>;
@@ -31,19 +32,29 @@ class BreakSignal {}
 // struct-related
 interface StructField {
     name: string;
+    type?: string;
 }
 
 interface StructDef {
-    fields: string[];
+    fields: StructField[];
 }
 
 type StructInstance = Map<string, any>;
 
-interface EnumDef {
+// interface EnumDef {
+//     name: string;
+//     variants: Set<string>;
+// }
+
+interface EnumVariant {
     name: string;
-    variants: Set<string>;
+    fields?: string[];
 }
 
+interface EnumDef {
+    name: string;
+    variants: Map<string, EnumVariant>;
+}
 
 
 export class MyVisitor extends rustVisitor<any> {
@@ -322,36 +333,43 @@ export class MyVisitor extends rustVisitor<any> {
     
     
     public visitStruct_decl = (ctx: any): null => {
+        // console.log("stuct decl")
         const structName = ctx.identifier().IDENTIFIER().getText();
-        const fields: string[] = [];
+        const fields: StructField[] = [];
     
         if (ctx.field_list()) {
-            const ids = ctx.field_list().identifier();
-            for (const id of ids) {
-                fields.push(id.IDENTIFIER().getText());
+            
+            const fieldDecls = ctx.field_list().field_decl();
+            for (const decl of fieldDecls) {
+                const name = decl.identifier().IDENTIFIER().getText();
+                const type = decl.ty().getText();
+                fields.push({ name, type });
             }
         }
     
         this.structDefs.set(structName, { fields });
+        // console.log("finish struct decl")
         return null;
     };
     
     public visitStructInit = (ctx: any): StructInstance => {
+        // console.log("struct init")
         const structName = ctx.identifier().IDENTIFIER().getText();
         const def = this.structDefs.get(structName);
         if (!def) throw new Error(`Struct '${structName}' is not defined`);
     
         const instance: StructInstance = new Map();
-    
+        
         if (ctx.field_init_list()) {
-            const entries = ctx.field_init_list().children;
-            for (let i = 0; i < entries.length; i += 3) { // id : expr , id : expr ...
-                const fieldName = entries[i].getText();
-                const value = this.visit(entries[i + 2]);
+            const fieldInits = ctx.field_init_list().field_init();
+            for (const init of fieldInits) {
+                const fieldName = init.identifier().IDENTIFIER().getText();
+                const value = this.visit(init.expression());
                 instance.set(fieldName, value);
             }
+
         }
-    
+        // console.log("finish struct init")
         return instance;
     };
     
@@ -372,11 +390,25 @@ export class MyVisitor extends rustVisitor<any> {
 
     public visitEnum_decl = (ctx: any): null => {
         const name = ctx.identifier().IDENTIFIER().getText();
-        const variants = new Set<string>();
+        const variants = new Map<string, EnumVariant>();
     
         if (ctx.variant_list()) {
-            for (const id of ctx.variant_list().identifier()) {
-                variants.add(id.IDENTIFIER().getText());
+            const variantNodes = ctx.variant_list().variant();
+            for (const v of variantNodes) {
+                const variantName = v.identifier().IDENTIFIER().getText();
+
+                const hasFieldList = typeof v.field_list === "function" && v.field_list() !== undefined;
+
+                if (hasFieldList) {
+                    // struct-like variant
+                    const fieldNames: string[] = v.field_list().field_decl().map((fd: any) =>
+                        fd.identifier().IDENTIFIER().getText()
+                    );
+                    variants.set(variantName, { name: variantName, fields: fieldNames });
+                } else {
+                    // simple variant
+                    variants.set(variantName, { name: variantName });
+                }
             }
         }
     
@@ -384,49 +416,124 @@ export class MyVisitor extends rustVisitor<any> {
         return null;
     };
     
+    
+    
 
-    public visitEnumAccess = (ctx: any): string => {
+    public visitEnumAccess = (ctx: any): any => {
         const enumName = ctx.identifier(0).IDENTIFIER().getText();
-        const variant = ctx.identifier(1).IDENTIFIER().getText();
-    
-        const def = this.enumDefs.get(enumName);
-        if (!def) throw new Error(`Enum '${enumName}' not defined`);
-        if (!def.variants.has(variant)) throw new Error(`Variant '${variant}' not in enum '${enumName}'`);
-    
-        return `${enumName}::${variant}`;
+        const variantName = ctx.identifier(1).IDENTIFIER().getText();
+        
+        const enumDef = this.enumDefs.get(enumName);
+        if (!enumDef) throw new Error(`Enum '${enumName}' not found`);
+        
+        const variant = enumDef.variants.get(variantName);
+        if (!variant) throw new Error(`Variant '${variantName}' not found in enum '${enumName}'`);
+        
+        const instance = new Map<string, any>();
+        instance.set("__enum", enumName);
+        instance.set("__variant", variantName);
+        
+        return instance;
     };
     
-
-    public visitMatchExpr = (ctx: any): number => {
-        const value = this.visit(ctx.expression()); 
+    public visitEnumStructInit = (ctx: any): any => {
+        const enumName = ctx.identifier(0).IDENTIFIER().getText();
+        const variantName = ctx.identifier(1).IDENTIFIER().getText();
+    
+        const enumDef = this.enumDefs.get(enumName);
+        if (!enumDef) throw new Error(`Enum '${enumName}' not found`);
+        const variant = enumDef.variants.get(variantName);
+        if (!variant) throw new Error(`Variant '${variantName}' not found`);
+    
+        const instance = new Map<string, any>();
+        instance.set("__enum", enumName);
+        instance.set("__variant", variantName);
+    
+        if (ctx.field_init_list()) {
+            const inits = ctx.field_init_list().field_init();
+            for (const init of inits) {
+                const key = init.identifier().IDENTIFIER().getText();
+                const val = this.visit(init.expression());
+                instance.set(key, val);
+            }
+        }
+    
+        return instance;
+    };
+    
+    public visitMatchExpr = (ctx: any): any => {
+        const value = this.visit(ctx.expression());  
         const arms = ctx.match_arm_list().match_arm();
     
         for (const arm of arms) {
             const pattern = arm.match_pattern();
     
+            // wildcard
             if (pattern.getText() === '_') {
                 return this.visit(arm.expression());
             }
     
             const patternValue = this.visit(pattern);
-            if (patternValue === value) {
-                return this.visit(arm.expression());
+    
+            if (typeof patternValue === "string") {
+                // simpleEnumPattern
+                if (value.get("__variant") === patternValue.split("::")[1]) {
+                    return this.visit(arm.expression());
+                }
+            } else if (patternValue.tag === "enumStructPattern") {
+                const { enumName, variant, bindings } = patternValue;
+    
+                if (
+                    value.get("__enum") === enumName &&
+                    value.get("__variant") === variant
+                ) {
+                     
+                    const tempEnv = new Map<string, Variable>();
+                    for (const name of bindings) {
+                        tempEnv.set(name, {
+                            value: value.get(name),
+                            mutable: false,
+                        });
+                    }
+    
+                    this.envStack.push(tempEnv);
+                    const result = this.visit(arm.expression());
+                    this.envStack.pop();
+                    return result;
+                }
             }
         }
     
         throw new Error("No match arm matched");
     };
     
+    
     public visitMatch_pattern = (ctx: any): any => {
         if (ctx.NUMBER()) return Number(ctx.NUMBER().getText());
         if (ctx.getText() === '_') return '_';
-        if (ctx.identifier().length === 2) {
+    
+        if (ctx.identifier().length === 2 && ctx.pattern_list()) {
+            // Book::Papery { index }
             const enumName = ctx.identifier(0).IDENTIFIER().getText();
             const variant = ctx.identifier(1).IDENTIFIER().getText();
-            return `${enumName}::${variant}`;
+            const bindings = ctx.pattern_list().identifier().map((id: any) =>
+                id.IDENTIFIER().getText()
+            );
+            return {
+                tag: "enumStructPattern",
+                enumName,
+                variant,
+                bindings,
+            };
         }
+    
+        if (ctx.identifier().length === 2 && !ctx.pattern_list()) {
+            return `${ctx.identifier(0).getText()}::${ctx.identifier(1).getText()}`;
+        }
+    
         throw new Error(`Unsupported match pattern: ${ctx.getText()}`);
     };
+    
     
     
     public visitReturn_stmt = (ctx: any): never => {

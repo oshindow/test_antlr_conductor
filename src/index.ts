@@ -6,75 +6,96 @@ import { MyVisitor } from "./SimpleLangEvaluator.js";
 
 
 const input = `
-fn add(a, b) {
-    return a + b  
-}
-
-let sum = 0
-for i in 1..5 {    
-    sum = add(i, sum)
-}
-sum
-
 struct User {
-    username,
-    email,
-    sign_in_count,
-    active
+    username: String,
+    email: String,
+    sign_in_count: u32,
+    active: bool,
 }
 
 let user1 = User {
     username: "xintong",
-    email: "email@example.com",
+    email: "xintong@example.com",
     sign_in_count: 1,
-    active: true
-} 
+    active: true,
+};
 
-user1.username 
-user1
+user1.username
 
-enum IpAddrKind {
-    V4,
-    V6,
+struct Group {
+    user: User,
+    group_name: String,
+    group_id: u32,
+    group_active: bool,
 }
 
-let four = IpAddrKind::V4 
+let group1 = Group {
+    user: user1,   
+    group_name: "team",
+    group_id: 1,
+    group_active: true,
+};
+
+group1.user
+
+enum Book {
+    Papery, Electronic
+}
+
+let book = Book::Papery;
+
+book
+
+fn main() {
+    enum Book {
+        Papery {index: u32},
+        Electronic {url: String},
+    }
+    
+    let book = Book::Papery{index: 1001};
+    let ebook = Book::Electronic{url: "url..."};
+    
+    match ebook {
+        Book::Papery { index } => {
+            return index;
+        },
+        Book::Electronic { url } => {
+            return url;
+        }
+    }
+}
+
+main()
+
+// enum IpAddrKind {
+//     V4,
+//     V6,
+//     user1,
+// }
+
+// let four = IpAddrKind::V4 
 // let six = IpAddrKind::V6
+// let user = IpAddrKind::user1
 
-enum Coin {
-    Penny,
-    Nickel,
-    Dime,
-    Quarter,
-}
+// user
+// enum Coin {
+//     Penny,
+//     Nickel,
+//     Dime,
+//     Quarter,
+// }
 
-fn value_in_cents(coin: Coin) -> u8 {
-    match coin {
-        Coin::Penny => 1,
-        Coin::Nickel => 5,
-        Coin::Dime => 10,
-        Coin::Quarter => 25,
-    }
-}
-let c = Coin::Dime 
-value_in_cents(c)
+// fn value_in_cents(coin: Coin) -> u8 {
+//     match coin {
+//         Coin::Penny => 1,
+//         Coin::Nickel => 5,
+//         Coin::Dime => 10,
+//         Coin::Quarter => 25,
+//     }
+// }
+// let c = Coin::Dime 
+// value_in_cents(c)
 
-let mut x = 0
-while x < 3 {
-    if x == 1 {
-        x = x + 1
-    } else {
-        x = x + 2
-    }
-}
-x
-
-
-let mut y = 5
-if y >= 5 {
-    y = y + 1
-}
-y
 `;
 
 const inputStream = CharStream.fromString(input);

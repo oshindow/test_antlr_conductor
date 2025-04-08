@@ -18,12 +18,17 @@ import { Break_stmtContext } from "./rustParser.js";
 import { BlockContext } from "./rustParser.js";
 import { Struct_declContext } from "./rustParser.js";
 import { Field_listContext } from "./rustParser.js";
+import { Field_declContext } from "./rustParser.js";
 import { Field_init_listContext } from "./rustParser.js";
+import { Field_initContext } from "./rustParser.js";
 import { Enum_declContext } from "./rustParser.js";
 import { Variant_listContext } from "./rustParser.js";
+import { SimpleVariantContext } from "./rustParser.js";
+import { StructVariantContext } from "./rustParser.js";
 import { While_stmtContext } from "./rustParser.js";
 import { If_stmtContext } from "./rustParser.js";
 import { AddContext } from "./rustParser.js";
+import { EnumStructInitContext } from "./rustParser.js";
 import { SubtractContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
 import { VariableReferenceContext } from "./rustParser.js";
@@ -51,6 +56,7 @@ import { NumberContext } from "./rustParser.js";
 import { Match_arm_listContext } from "./rustParser.js";
 import { Match_armContext } from "./rustParser.js";
 import { Match_patternContext } from "./rustParser.js";
+import { Pattern_listContext } from "./rustParser.js";
 
 
 /**
@@ -211,6 +217,16 @@ export class rustListener implements ParseTreeListener {
      */
     exitField_list?: (ctx: Field_listContext) => void;
     /**
+     * Enter a parse tree produced by `rustParser.field_decl`.
+     * @param ctx the parse tree
+     */
+    enterField_decl?: (ctx: Field_declContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.field_decl`.
+     * @param ctx the parse tree
+     */
+    exitField_decl?: (ctx: Field_declContext) => void;
+    /**
      * Enter a parse tree produced by `rustParser.field_init_list`.
      * @param ctx the parse tree
      */
@@ -220,6 +236,16 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitField_init_list?: (ctx: Field_init_listContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.field_init`.
+     * @param ctx the parse tree
+     */
+    enterField_init?: (ctx: Field_initContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.field_init`.
+     * @param ctx the parse tree
+     */
+    exitField_init?: (ctx: Field_initContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.enum_decl`.
      * @param ctx the parse tree
@@ -240,6 +266,30 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitVariant_list?: (ctx: Variant_listContext) => void;
+    /**
+     * Enter a parse tree produced by the `simpleVariant`
+     * labeled alternative in `rustParser.variant`.
+     * @param ctx the parse tree
+     */
+    enterSimpleVariant?: (ctx: SimpleVariantContext) => void;
+    /**
+     * Exit a parse tree produced by the `simpleVariant`
+     * labeled alternative in `rustParser.variant`.
+     * @param ctx the parse tree
+     */
+    exitSimpleVariant?: (ctx: SimpleVariantContext) => void;
+    /**
+     * Enter a parse tree produced by the `structVariant`
+     * labeled alternative in `rustParser.variant`.
+     * @param ctx the parse tree
+     */
+    enterStructVariant?: (ctx: StructVariantContext) => void;
+    /**
+     * Exit a parse tree produced by the `structVariant`
+     * labeled alternative in `rustParser.variant`.
+     * @param ctx the parse tree
+     */
+    exitStructVariant?: (ctx: StructVariantContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.while_stmt`.
      * @param ctx the parse tree
@@ -272,6 +322,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitAdd?: (ctx: AddContext) => void;
+    /**
+     * Enter a parse tree produced by the `enumStructInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterEnumStructInit?: (ctx: EnumStructInitContext) => void;
+    /**
+     * Exit a parse tree produced by the `enumStructInit`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitEnumStructInit?: (ctx: EnumStructInitContext) => void;
     /**
      * Enter a parse tree produced by the `subtract`
      * labeled alternative in `rustParser.expression`.
@@ -582,6 +644,16 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitMatch_pattern?: (ctx: Match_patternContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.pattern_list`.
+     * @param ctx the parse tree
+     */
+    enterPattern_list?: (ctx: Pattern_listContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.pattern_list`.
+     * @param ctx the parse tree
+     */
+    exitPattern_list?: (ctx: Pattern_listContext) => void;
 
     visitTerminal(node: TerminalNode): void {}
     visitErrorNode(node: ErrorNode): void {}

@@ -1,5 +1,5 @@
 yarn generate-parser
 # yarn build
 git add .
-git commit -m "testing fn value_in_cents(coin: Coin) -> u8 {} style"
+git commit -m "tested data types, semicolon, struct, nested struct, enums, match, environment stack; not cover error checks" 
 git push origin xintong
