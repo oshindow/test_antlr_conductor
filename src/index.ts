@@ -65,15 +65,40 @@ fn main() {
     }
 }
 
-main()
+// main()
 
-fn main() {
-    println!("Hello, world!");
-    another_function();
+// fn spawn_function() {
+//     for i in 0..5 {
+//         println("spawned thread print", i);
+//         // sleep(1);
+//     }
+// }
+
+// fn main() {
+//     spawn(spawn_function);
+//     for i in 0..3 {
+//         println("main thread print", i);
+//         // sleep(1);
+//     }
+// }
+
+// main()
+fn print_a() {
+    let x = 1;
+    println("A", x); 
+    x = x + 1;
+    println("A", x); 
+}
+fn print_b() {
+    let x = 2;
+    println("B", x); 
+    x = x + 2;
+    println("B", x); 
 }
 
-fn another_function() {
-    println!("Hello, runoob!");
+fn main() {
+    spawn(print_a);
+    spawn(print_b);
 }
 
 `;

@@ -118,8 +118,8 @@ expression:
     | expression '+' expression # add
     | expression '-' expression # subtract
     | number                    # simple
-    | identifier                # variableReference
     | identifier LPAREN argument_list? RPAREN  # functionCall
+    | identifier                # variableReference
     | block                     # blockExpr
     | LPAREN expression RPAREN  # parenExpr
     | identifier '{' field_init_list? '}'  # structInit

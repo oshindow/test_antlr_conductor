@@ -9,6 +9,8 @@ import { BasicEvaluator } from "conductor/dist/conductor/runner/index.js";
 import { IRunnerPlugin } from "conductor/dist/conductor/runner/types/index.js";
 import { rustVisitor } from "./parser/rustVisitor.js";
 import { Trees } from 'antlr4ng';
+import { env } from "process";
+
 
 interface Variable {
     value: number;
@@ -56,6 +58,17 @@ interface EnumDef {
     variants: Map<string, EnumVariant>;
 }
 
+// concurrency
+
+interface Thread {
+    id: number;
+    gen: Generator;
+    sleepUntil: number;  // logical time (tick)
+    done: boolean;
+    env: Environment;
+    // envStack: Environment[];
+}
+
 
 export class MyVisitor extends rustVisitor<any> {
     private variables: Map<string, Variable> = new Map();
@@ -78,13 +91,90 @@ export class MyVisitor extends rustVisitor<any> {
 
     private enumDefs: Map<string, EnumDef> = new Map();
 
-    public visitStart = (ctx: any): number => {
-        let result = 0;
-        for (let i = 0; i < ctx.statement().length; i++) {
-            result = this.visit(ctx.statement(i));
+    private threads: Thread[] = [];
+    private currentTick = 0;
+
+    private runScheduler(): void {
+        this.currentTick = 0;
+    
+        while (this.threads.some(t => !t.done)) {
+            for (const thread of this.threads) {
+                if (thread.done) continue;
+                if (this.currentTick < thread.sleepUntil) continue;
+    
+                try {
+                    const { value, done } = thread.gen.next();
+                    if (done) {
+                        thread.done = true;
+                    }
+                } catch (e) {
+                    if (e.type === "sleep") {
+                        thread.sleepUntil = this.currentTick + e.duration;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+    
+            this.currentTick++;
         }
-        return result;
     }
+
+    private buildGenerator = (block: any, params: string[] = [], newEnv: Map<string, Variable> = new Map()): Generator<any, void, void> => {
+        const self = this;
+        
+        function* gen() {
+            // const envStack = [newEnv]; 
+            // const originalEnvStack = self.envStack;
+            // self.envStack = envStack;     // swap in
+            self.envStack.push(newEnv);
+            console.log(self.envStack)
+            for (const stmt of block.statement()) {
+                yield; // simulate a single tick
+                self.visit(stmt);
+            }
+            if (block.expression()) {
+                yield;
+                self.visit(block.expression());
+            }
+            self.envStack.pop()
+            // self.envStack = originalEnvStack;
+        }
+        return gen();
+    };
+    
+    
+    public visitStart = (ctx: any): number => {
+         
+        for (let i = 0; i < ctx.statement().length; i++) {
+            const stmt = ctx.statement(i);
+            if (stmt.function_decl) {
+                this.visit(stmt);   
+            }
+        }
+
+         
+        const mainFn = this.functions.get("main");
+        if (!mainFn) throw new Error("No main() function found");
+        
+        const mainEnv = new Map<string, Variable>();
+        const mainThread = {
+            id: 0,
+            gen: this.buildGenerator(mainFn.body, mainFn.params, mainEnv),
+            sleepUntil: this.currentTick,
+            done: false,
+            // lastValue: undefined,
+            env: mainEnv,
+            envStack:[mainEnv], // each thread has its own env
+        };
+        this.threads.unshift(mainThread); 
+
+        
+        this.runScheduler();
+
+        return 0;
+    }
+
 
     public visitEqual = (ctx: any): boolean => {
         return this.visit(ctx.expression(0)) === this.visit(ctx.expression(1));
@@ -189,7 +279,52 @@ export class MyVisitor extends rustVisitor<any> {
 
     public visitFunctionCall = (ctx: any): number => {
         const name = ctx.identifier().IDENTIFIER().getText();
-        console.log(name)
+        // console.log(name)
+        if (name === "spawn") {
+            // console.log("spawn called")
+            const arg = ctx.argument_list()?.expression(0);
+            // console.log(arg)
+            if (!arg) throw new Error(`spawn requires a function name`);
+            
+            const funcName = arg.getText();
+            const func = this.functions.get(funcName);
+            // console.log(funcName)
+            // console.log(func)
+            if (!func) throw new Error(`Function '${funcName}' not found`);
+    
+            // Wrap the function body in a generator
+            const newEnv = new Map<string, Variable>(); 
+            const generator = this.buildGenerator(func.body, func.params, newEnv);
+    
+            const threadId = this.threads.length;
+            const thread = {
+                id: threadId,
+                gen: generator,
+                sleepUntil: this.currentTick,
+                done: false,
+                // lastValue: undefined,
+                env: newEnv, // each thread has its own env
+                // envStack: [newEnv], // each thread has its own env
+
+            };
+    
+            this.threads.push(thread);
+            return threadId;
+        }
+        
+        if (name === "sleep") {
+            console.log("sleep called")
+            const ms = Number(ctx.argument_list().expression(0).getText());
+            console.log(`sleep for ${ms} ms`);
+            throw { type: "sleep", duration: ms };
+        }
+        
+        if (name === "println") {
+            const args = ctx.argument_list()?.expression().map((e: any) => this.visit(e)) || [];
+            console.log(...args);
+            return 0;
+        }
+        
         const func = this.functions.get(name);
         if (!func) throw new Error(`Function '${name}' not found`);
     
