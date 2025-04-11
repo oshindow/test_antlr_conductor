@@ -144,38 +144,45 @@ export class MyVisitor extends rustVisitor<any> {
     };
     
     
+    // public visitStart = (ctx: any): number => {
+    //     console.log("visitStart")
+    //     for (let i = 0; i < ctx.statement().length; i++) {
+    //         const stmt = ctx.statement(i);
+    //         if (stmt.function_decl) {
+    //             this.visit(stmt);   
+    //         }
+    //     }
+
+    //     console.log("after function_decl")
+    //     const mainFn = this.functions.get("main");
+    //     if (!mainFn) throw new Error("No main() function found");
+        
+    //     const mainEnv = new Map<string, Variable>();
+    //     const mainThread = {
+    //         id: 0,
+    //         gen: this.buildGenerator(mainFn.body, mainFn.params, mainEnv),
+    //         sleepUntil: this.currentTick,
+    //         done: false,
+    //         // lastValue: undefined,
+    //         env: mainEnv,
+    //         envStack:[mainEnv], // each thread has its own env
+    //     };
+    //     this.threads.unshift(mainThread); 
+
+        
+    //     this.runScheduler();
+
+    //     return 0;
+    // }
+
     public visitStart = (ctx: any): number => {
-         
+        let result = 0;
         for (let i = 0; i < ctx.statement().length; i++) {
-            const stmt = ctx.statement(i);
-            if (stmt.function_decl) {
-                this.visit(stmt);   
-            }
+            result = this.visit(ctx.statement(i));
         }
-
-         
-        const mainFn = this.functions.get("main");
-        if (!mainFn) throw new Error("No main() function found");
-        
-        const mainEnv = new Map<string, Variable>();
-        const mainThread = {
-            id: 0,
-            gen: this.buildGenerator(mainFn.body, mainFn.params, mainEnv),
-            sleepUntil: this.currentTick,
-            done: false,
-            // lastValue: undefined,
-            env: mainEnv,
-            envStack:[mainEnv], // each thread has its own env
-        };
-        this.threads.unshift(mainThread); 
-
-        
-        this.runScheduler();
-
-        return 0;
+        return result;
     }
-
-
+    
     public visitEqual = (ctx: any): boolean => {
         return this.visit(ctx.expression(0)) === this.visit(ctx.expression(1));
     };

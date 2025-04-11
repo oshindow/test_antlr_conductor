@@ -97,10 +97,10 @@ fn print_b() {
 }
 
 fn main() {
-    spawn(print_a);
-    spawn(print_b);
+    // spawn(print_a);
+    print_b();
 }
-
+main()
 `;
 
 const inputStream = CharStream.fromString(input);
