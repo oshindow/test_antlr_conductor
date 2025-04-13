@@ -559,18 +559,6 @@ public class rustParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class Function_declContext extends ParserRuleContext {
-		public Function_declContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_function_decl; }
-	 
-		public Function_declContext() { }
-		public void copyFrom(Function_declContext ctx) {
-			super.copyFrom(ctx);
-		}
-	}
-	@SuppressWarnings("CheckReturnValue")
-	public static class FunctionDeclContext extends Function_declContext {
 		public IdentifierContext identifier() {
 			return getRuleContext(IdentifierContext.class,0);
 		}
@@ -585,7 +573,10 @@ public class rustParser extends Parser {
 		public TyContext ty() {
 			return getRuleContext(TyContext.class,0);
 		}
-		public FunctionDeclContext(Function_declContext ctx) { copyFrom(ctx); }
+		public Function_declContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_function_decl; }
 	}
 
 	public final Function_declContext function_decl() throws RecognitionException {
@@ -593,7 +584,6 @@ public class rustParser extends Parser {
 		enterRule(_localctx, 12, RULE_function_decl);
 		int _la;
 		try {
-			_localctx = new FunctionDeclContext(_localctx);
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(123);

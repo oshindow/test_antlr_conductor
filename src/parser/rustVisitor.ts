@@ -9,7 +9,7 @@ import { Let_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
 import { Return_stmtContext } from "./rustParser.js";
 import { Expression_stmtContext } from "./rustParser.js";
-import { FunctionDeclContext } from "./rustParser.js";
+import { Function_declContext } from "./rustParser.js";
 import { Parameter_listContext } from "./rustParser.js";
 import { ParameterContext } from "./rustParser.js";
 import { For_stmtContext } from "./rustParser.js";
@@ -104,12 +104,11 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitExpression_stmt?: (ctx: Expression_stmtContext) => Result;
     /**
-     * Visit a parse tree produced by the `functionDecl`
-     * labeled alternative in `rustParser.function_decl`.
+     * Visit a parse tree produced by `rustParser.function_decl`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitFunctionDecl?: (ctx: FunctionDeclContext) => Result;
+    visitFunction_decl?: (ctx: Function_declContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.parameter_list`.
      * @param ctx the parse tree

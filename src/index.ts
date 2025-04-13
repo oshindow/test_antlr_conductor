@@ -7,7 +7,17 @@ import { CompileVisitor } from "./CompilerVisitor.js";
 
 
 const input = `
-1+2
+
+fn outer(a) {
+    fn inner(b) {
+        return a + b;
+    }
+    let x = inner(10);
+    return x;
+}
+outer(5)
+
+
 `;
 
 const inputStream = CharStream.fromString(input);

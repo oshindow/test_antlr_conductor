@@ -480,7 +480,6 @@ export class rustParser extends antlr.Parser {
         this.enterRule(localContext, 12, rustParser.RULE_function_decl);
         let _la: number;
         try {
-            localContext = new FunctionDeclContext(localContext);
             this.enterOuterAlt(localContext, 1);
             {
             this.state = 123;
@@ -2349,18 +2348,6 @@ export class Function_declContext extends antlr.ParserRuleContext {
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }
-    public override get ruleIndex(): number {
-        return rustParser.RULE_function_decl;
-    }
-    public override copyFrom(ctx: Function_declContext): void {
-        super.copyFrom(ctx);
-    }
-}
-export class FunctionDeclContext extends Function_declContext {
-    public constructor(ctx: Function_declContext) {
-        super(ctx.parent, ctx.invokingState);
-        super.copyFrom(ctx);
-    }
     public identifier(): IdentifierContext {
         return this.getRuleContext(0, IdentifierContext)!;
     }
@@ -2379,19 +2366,22 @@ export class FunctionDeclContext extends Function_declContext {
     public ty(): TyContext | null {
         return this.getRuleContext(0, TyContext);
     }
+    public override get ruleIndex(): number {
+        return rustParser.RULE_function_decl;
+    }
     public override enterRule(listener: rustListener): void {
-        if(listener.enterFunctionDecl) {
-             listener.enterFunctionDecl(this);
+        if(listener.enterFunction_decl) {
+             listener.enterFunction_decl(this);
         }
     }
     public override exitRule(listener: rustListener): void {
-        if(listener.exitFunctionDecl) {
-             listener.exitFunctionDecl(this);
+        if(listener.exitFunction_decl) {
+             listener.exitFunction_decl(this);
         }
     }
     public override accept<Result>(visitor: rustVisitor<Result>): Result | null {
-        if (visitor.visitFunctionDecl) {
-            return visitor.visitFunctionDecl(this);
+        if (visitor.visitFunction_decl) {
+            return visitor.visitFunction_decl(this);
         } else {
             return visitor.visitChildren(this);
         }

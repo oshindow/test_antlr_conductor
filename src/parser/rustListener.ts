@@ -9,7 +9,7 @@ import { Let_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
 import { Return_stmtContext } from "./rustParser.js";
 import { Expression_stmtContext } from "./rustParser.js";
-import { FunctionDeclContext } from "./rustParser.js";
+import { Function_declContext } from "./rustParser.js";
 import { Parameter_listContext } from "./rustParser.js";
 import { ParameterContext } from "./rustParser.js";
 import { For_stmtContext } from "./rustParser.js";
@@ -125,17 +125,15 @@ export class rustListener implements ParseTreeListener {
      */
     exitExpression_stmt?: (ctx: Expression_stmtContext) => void;
     /**
-     * Enter a parse tree produced by the `functionDecl`
-     * labeled alternative in `rustParser.function_decl`.
+     * Enter a parse tree produced by `rustParser.function_decl`.
      * @param ctx the parse tree
      */
-    enterFunctionDecl?: (ctx: FunctionDeclContext) => void;
+    enterFunction_decl?: (ctx: Function_declContext) => void;
     /**
-     * Exit a parse tree produced by the `functionDecl`
-     * labeled alternative in `rustParser.function_decl`.
+     * Exit a parse tree produced by `rustParser.function_decl`.
      * @param ctx the parse tree
      */
-    exitFunctionDecl?: (ctx: FunctionDeclContext) => void;
+    exitFunction_decl?: (ctx: Function_declContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.parameter_list`.
      * @param ctx the parse tree

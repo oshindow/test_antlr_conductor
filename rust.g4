@@ -37,7 +37,7 @@ expression_stmt:
 ;
 
 function_decl:
-    'fn' identifier '(' parameter_list? ')' ('->' ty)? block  # functionDecl
+    'fn' identifier '(' parameter_list? ')' ('->' ty)? block  
 ;
 
 parameter_list:
