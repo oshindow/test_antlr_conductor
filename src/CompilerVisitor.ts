@@ -34,7 +34,10 @@ export type Instruction =
   | { tag: 'GOTO'; addr: number }
   | { tag: 'JOF'; addr: number }
   | { tag: 'POP' }
-  | { tag: 'DONE' };
+  | { tag: 'DONE' } 
+  | { tag: 'SPAWN' }         
+  | { tag: 'YIELD' }          
+  | { tag: 'JOIN' };  
 
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -86,11 +89,19 @@ export class CompileVisitor
 
   visitFunctionCall(ctx: FunctionCallContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
-      this.instrs.push({ tag: 'LD', sym: name });
       const args = ctx.argument_list()?.expression() ?? [];
+      // Special case: spawn(f)
+      if (name === "spawn") {
+          this.visit(args[0]); // Compile the function expression
+          this.instrs.push({ tag: 'SPAWN' });
+          return;
+      }
+    
+      this.instrs.push({ tag: 'LD', sym: name });
       for (const expr of args) {
           this.visit(expr);
       }
+      
       this.instrs.push({ tag: 'CALL', arity: args.length });
   }
 

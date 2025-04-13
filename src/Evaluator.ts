@@ -1,207 +1,234 @@
-// A minimal stack-based evaluator for Rust-like bytecode
+// Evaluator with cooperative concurrency support
 
 export type Instruction =
-    | { tag: 'LDC'; val: any }
-    | { tag: 'LD'; sym: string }
-    | { tag: 'ASSIGN'; sym: string }
-    | { tag: 'BINOP'; sym: string }
-    | { tag: 'LDF'; prms: string[]; addr: number }
-    | { tag: 'CALL'; arity: number }
-    | { tag: 'TAIL_CALL'; arity: number }
-    | { tag: 'RESET' }
-    | { tag: 'ENTER_SCOPE'; syms: string[] }
-    | { tag: 'EXIT_SCOPE' }
-    | { tag: 'GOTO'; addr: number }
-    | { tag: 'JOF'; addr: number }
-    | { tag: 'POP' }
-    | { tag: 'DONE' };
+  | { tag: 'LDC'; val: any }
+  | { tag: 'LD'; sym: string }
+  | { tag: 'ASSIGN'; sym: string }
+  | { tag: 'BINOP'; sym: string }
+  | { tag: 'LDF'; prms: string[]; addr: number }
+  | { tag: 'CALL'; arity: number }
+  | { tag: 'TAIL_CALL'; arity: number }
+  | { tag: 'RESET' }
+  | { tag: 'ENTER_SCOPE'; syms: string[] }
+  | { tag: 'EXIT_SCOPE' }
+  | { tag: 'GOTO'; addr: number }
+  | { tag: 'JOF'; addr: number }
+  | { tag: 'POP' }
+  | { tag: 'DONE' }
+  | { tag: 'SPAWN' }
+  | { tag: 'YIELD' }
+  | { tag: 'JOIN' };
 
-type Closure = {
-    tag: 'CLOSURE';
-    prms: string[];
-    addr: number;
-    env: Frame[];
-};
+interface ThreadContext {
+  pc: number;
+  stack: any[];
+  env: Record<string, any>[];
+  rts: { addr: number; env: Record<string, any>[] }[];
+  timeBudget: number;
+}
 
-type Frame = Record<string, any>;
+export class ConcurrentEvaluator {
+  private readonly TIME_SLICE = 5;
+  private threadQueue: ThreadContext[] = [];
+  private nextThreadId = 0;
+  private activeThread: ThreadContext | null = null;
 
-type CallFrame = {
-    addr: number;
-    env: Frame[];
-};
+  constructor(private instrs: Instruction[]) {}
 
-export class Evaluator {
-    private pc = 0;
-    private stack: any[] = [];
-    private env: Frame[] = [{}];
-    private rts: CallFrame[] = [];
+  run(): any {
+    this.threadQueue.push(this.createThread());
 
-    run(instrs: Instruction[]): any {
-        this.pc = 0;
-        this.stack = [];
-        this.env = [{}];
-        this.rts = [];
+    while (this.threadQueue.length > 0) {
+      this.activeThread = this.threadQueue.shift()!;
+      this.activeThread.timeBudget = this.TIME_SLICE;
 
-        while (this.pc < instrs.length) {
-            const instr = instrs[this.pc];
+      while (this.activeThread.timeBudget > 0 && this.activeThread.pc < this.instrs.length) {
+        const instr = this.instrs[this.activeThread.pc];
 
-            switch (instr.tag) {
-                case 'LDC':
-                    this.stack.push(instr.val);
-                    this.pc++;
-                    break;
+        switch (instr.tag) {
+          case 'LDC':
+            this.activeThread.stack.push(instr.val);
+            this.advance();
+            break;
 
-                case 'LD': {
-                    const val = this.lookup(instr.sym);
-                    this.stack.push(val);
-                    this.pc++;
-                    break;
-                }
+          case 'LD': {
+            const val = this.lookup(instr.sym);
+            this.activeThread.stack.push(val);
+            this.advance();
+            break;
+          }
 
-                case 'ASSIGN': {
-                    const val = this.stack[this.stack.length - 1];
-                    this.assign(instr.sym, val);
-                    this.pc++;
-                    break;
-                }
+          case 'ASSIGN': {
+            const val = this.activeThread.stack[this.activeThread.stack.length - 1];
+            this.assign(instr.sym, val);
+            this.advance();
+            break;
+          }
 
-                case 'BINOP': {
-                    const right = this.stack.pop();
-                    const left = this.stack.pop();
-                    this.stack.push(this.applyBinOp(instr.sym, left, right));
-                    this.pc++;
-                    break;
-                }
+          case 'BINOP': {
+            const right = this.activeThread.stack.pop();
+            const left = this.activeThread.stack.pop();
+            this.activeThread.stack.push(this.applyBinOp(instr.sym, left, right));
+            this.advance();
+            break;
+          }
 
-                case 'LDF': {
-                    const closure: Closure = {
-                        tag: 'CLOSURE',
-                        prms: instr.prms,
-                        addr: instr.addr,
-                        env: [...this.env]
-                    };
-                    this.stack.push(closure);
-                    this.pc++;
-                    break;
-                }
+          case 'LDF': {
+            const closure = {
+              tag: 'CLOSURE',
+              prms: instr.prms,
+              addr: instr.addr,
+              env: [...this.activeThread.env]
+            };
+            this.activeThread.stack.push(closure);
+            this.advance();
+            break;
+          }
 
-                case 'CALL': {
-                    const args = this.stack.splice(-instr.arity);
-                    const func = this.stack.pop();
+          case 'CALL': {
+            const args = instr.arity > 0
+                ? this.activeThread.stack.splice(-instr.arity)
+                : [];
+            const func = this.activeThread.stack.pop();
 
-                    if (func.tag === 'CLOSURE') {
-                        this.rts.push({ addr: this.pc + 1, env: this.env });
-                        this.env = this.extend(func.prms, args, func.env);
-                        this.pc = func.addr;
-                    } else {
-                        throw new Error("Cannot call non-function value");
-                    }
-                    break;
-                }
+            if (func.tag !== 'CLOSURE') throw new Error('Cannot call non-function');
+            this.activeThread.rts.push({ addr: this.activeThread.pc + 1, env: this.activeThread.env });
+            this.activeThread.env = this.extend(func.prms, args, func.env);
+            this.activeThread.pc = func.addr;
+            break;
+          }
 
-                case 'TAIL_CALL': {
-                    const args = this.stack.splice(-instr.arity);
-                    const func = this.stack.pop();
+          case 'TAIL_CALL': {
+            const args = this.activeThread.stack.splice(-instr.arity);
+            const func = this.activeThread.stack.pop();
+            if (func.tag !== 'CLOSURE') throw new Error('Cannot tail-call non-function');
+            this.activeThread.env = this.extend(func.prms, args, func.env);
+            this.activeThread.pc = func.addr;
+            break;
+          }
 
-                    if (func.tag === 'CLOSURE') {
-                        this.env = this.extend(func.prms, args, func.env);
-                        this.pc = func.addr;
-                    } else {
-                        throw new Error("Cannot tail-call non-function value");
-                    }
-                    break;
-                }
+          case 'RESET': {
+            const frame = this.activeThread.rts.pop();
+            if (!frame) throw new Error('Call stack underflow');
+            this.activeThread.pc = frame.addr;
+            this.activeThread.env = frame.env;
+            break;
+          }
 
-                case 'RESET': {
-                    const frame = this.rts.pop();
-                    if (!frame) throw new Error("Call stack underflow");
-                    this.pc = frame.addr;
-                    this.env = frame.env;
-                    break;
-                }
+          case 'ENTER_SCOPE': {
+            const frame: Record<string, any> = {};
+            for (const sym of instr.syms) frame[sym] = undefined;
+            this.activeThread.env.unshift(frame);
+            this.advance();
+            break;
+          }
 
-                case 'ENTER_SCOPE': {
-                    const frame: Frame = {};
-                    for (const sym of instr.syms) frame[sym] = undefined;
-                    this.env.unshift(frame);
-                    this.pc++;
-                    break;
-                }
+          case 'EXIT_SCOPE':
+            this.activeThread.env.shift();
+            this.advance();
+            break;
 
-                case 'EXIT_SCOPE': {
-                    this.env.shift();
-                    this.pc++;
-                    break;
-                }
+          case 'GOTO':
+            this.activeThread.pc = instr.addr;
+            break;
 
-                case 'GOTO':
-                    this.pc = instr.addr;
-                    break;
+          case 'JOF': {
+            const cond = this.activeThread.stack.pop();
+            this.activeThread.pc = cond ? this.activeThread.pc + 1 : instr.addr;
+            break;
+          }
 
-                case 'JOF': {
-                    const cond = this.stack.pop();
-                    this.pc = cond ? this.pc + 1 : instr.addr;
-                    break;
-                }
+          case 'POP':
+            this.activeThread.stack.pop();
+            this.advance();
+            break;
 
-                case 'POP':
-                    this.stack.pop();
-                    this.pc++;
-                    break;
+          case 'DONE':
+            return this.activeThread.stack.pop();
 
-                case 'DONE':
-                    return this.stack.pop();
+          case 'SPAWN': {
+            const func = this.activeThread.stack.pop();
+            if (func.tag !== 'CLOSURE') throw new Error('spawn expects a function');
+            const childThread = this.createThread();
+            childThread.pc = func.addr;
+            childThread.env = [...func.env];
+            this.threadQueue.push(childThread);
+            this.advance();
+            break;
+          }
 
-                default:
-                    throw new Error(`Unknown instruction: ${JSON.stringify(instr)}`);
-            }
+          case 'YIELD': {
+            this.threadQueue.push(this.activeThread);
+            this.activeThread = null;
+            break;
+          }
+
+          case 'JOIN':
+            this.advance();
+            break;
         }
+      }
 
-        throw new Error("Program did not terminate with DONE");
+      if (this.activeThread && this.activeThread.pc < this.instrs.length) {
+        this.threadQueue.push(this.activeThread);
+      }
     }
+  }
 
-    private lookup(sym: string): any {
-        for (const frame of this.env) {
-            if (sym in frame) return frame[sym];
-        }
-        throw new Error(`Unbound variable: ${sym}`);
-    }
+  private advance() {
+    this.activeThread!.pc++;
+    this.activeThread!.timeBudget--;
+  }
 
-    private assign(sym: string, val: any): void {
-        for (const frame of this.env) {
-            if (sym in frame) {
-                frame[sym] = val;
-                return;
-            }
-        }
-        this.env[0][sym] = val; // assign to top frame if not declared
+  private lookup(sym: string): any {
+    for (const frame of this.activeThread!.env) {
+      if (sym in frame) return frame[sym];
     }
+    throw new Error(`Unbound variable: ${sym}`);
+  }
 
-    private extend(prms: string[], args: any[], env: Frame[]): Frame[] {
-        if (prms.length !== args.length) {
-            throw new Error(`Arity mismatch: expected ${prms.length}, got ${args.length}`);
-        }
-        const frame: Frame = {};
-        for (let i = 0; i < prms.length; i++) {
-            frame[prms[i]] = args[i];
-        }
-        return [frame, ...env];
+  private assign(sym: string, val: any): void {
+    for (const frame of this.activeThread!.env) {
+      if (sym in frame) {
+        frame[sym] = val;
+        return;
+      }
     }
+    this.activeThread!.env[0][sym] = val;
+  }
 
-    private applyBinOp(op: string, left: any, right: any): any {
-        switch (op) {
-            case '+': return left + right;
-            case '-': return left - right;
-            case '*': return left * right;
-            case '/': return left / right;
-            case '==': return left === right;
-            case '!=': return left !== right;
-            case '<': return left < right;
-            case '<=': return left <= right;
-            case '>': return left > right;
-            case '>=': return left >= right;
-            default:
-                throw new Error(`Unknown binary operator: ${op}`);
-        }
+  private extend(prms: string[], args: any[], env: Record<string, any>[]): Record<string, any>[] {
+    console.log("Extending with params:", prms, "and args:", args);
+    if (prms.length !== args.length) throw new Error("Arity mismatch");
+    const frame: Record<string, any> = {};
+    for (let i = 0; i < prms.length; i++) frame[prms[i]] = args[i];
+    return [frame, ...env];
+  }
+
+  private applyBinOp(op: string, left: any, right: any): any {
+    switch (op) {
+      case '+': return left + right;
+      case '-': return left - right;
+      case '*': return left * right;
+      case '/': return left / right;
+      case '==': return left === right;
+      case '!=': return left !== right;
+      case '<': return left < right;
+      case '<=': return left <= right;
+      case '>': return left > right;
+      case '>=': return left >= right;
+      default:
+        throw new Error(`Unknown binary operator: ${op}`);
     }
+  }
+
+  private createThread(): ThreadContext {
+    return {
+      pc: 0,
+      stack: [],
+      env: [{}],
+      rts: [],
+      timeBudget: this.TIME_SLICE
+    };
+  }
 }

@@ -1,22 +1,19 @@
 import { CharStream, CommonTokenStream, Trees } from "antlr4ng";
 import { rustLexer } from "./parser/rustLexer.js";
 import { rustParser } from "./parser/rustParser.js";
-import { Evaluator } from "./Evaluator.js";
+import { ConcurrentEvaluator } from "./Evaluator.js";
 import { CompileVisitor } from "./CompilerVisitor.js";
 //import { ThrowingErrorListener } from "./ErrorListener.js";  
 
 
 const input = `
-
-fn outer(a) {
-    fn inner(b) {
-        return a + b;
-    }
-    let x = inner(10);
+let x = 0;
+fn f() {
+    x = x + 1;
     return x;
 }
-outer(5)
 
+spawn(f);
 
 `;
 
@@ -41,8 +38,8 @@ try {
         console.log(`${i}:`, instr);
     }
 
-    const evaluator = new Evaluator();
-    const result = evaluator.run(compiler.instrs);
+    const evaluator = new ConcurrentEvaluator(compiler.instrs);
+    const result = evaluator.run();
     console.log("Result:", result);
      
 } catch (e) {
