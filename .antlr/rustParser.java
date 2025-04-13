@@ -571,11 +571,8 @@ public class rustParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class FunctionDeclContext extends Function_declContext {
-		public List<IdentifierContext> identifier() {
-			return getRuleContexts(IdentifierContext.class);
-		}
-		public IdentifierContext identifier(int i) {
-			return getRuleContext(IdentifierContext.class,i);
+		public IdentifierContext identifier() {
+			return getRuleContext(IdentifierContext.class,0);
 		}
 		public TerminalNode LPAREN() { return getToken(rustParser.LPAREN, 0); }
 		public TerminalNode RPAREN() { return getToken(rustParser.RPAREN, 0); }
@@ -584,6 +581,9 @@ public class rustParser extends Parser {
 		}
 		public Parameter_listContext parameter_list() {
 			return getRuleContext(Parameter_listContext.class,0);
+		}
+		public TyContext ty() {
+			return getRuleContext(TyContext.class,0);
 		}
 		public FunctionDeclContext(Function_declContext ctx) { copyFrom(ctx); }
 	}
@@ -622,7 +622,7 @@ public class rustParser extends Parser {
 				setState(130);
 				match(T__6);
 				setState(131);
-				identifier();
+				ty();
 				}
 			}
 
@@ -695,11 +695,11 @@ public class rustParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class ParameterContext extends ParserRuleContext {
-		public List<IdentifierContext> identifier() {
-			return getRuleContexts(IdentifierContext.class);
+		public IdentifierContext identifier() {
+			return getRuleContext(IdentifierContext.class,0);
 		}
-		public IdentifierContext identifier(int i) {
-			return getRuleContext(IdentifierContext.class,i);
+		public TyContext ty() {
+			return getRuleContext(TyContext.class,0);
 		}
 		public ParameterContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -724,7 +724,7 @@ public class rustParser extends Parser {
 				setState(145);
 				match(T__2);
 				setState(146);
-				identifier();
+				ty();
 				}
 			}
 
@@ -2652,7 +2652,7 @@ public class rustParser extends Parser {
 		"2\u0019\u0000}\u007f\u00052\u0000\u0000~\u0080\u0003\u000e\u0007\u0000"+
 		"\u007f~\u0001\u0000\u0000\u0000\u007f\u0080\u0001\u0000\u0000\u0000\u0080"+
 		"\u0081\u0001\u0000\u0000\u0000\u0081\u0084\u00053\u0000\u0000\u0082\u0083"+
-		"\u0005\u0007\u0000\u0000\u0083\u0085\u00032\u0019\u0000\u0084\u0082\u0001"+
+		"\u0005\u0007\u0000\u0000\u0083\u0085\u00030\u0018\u0000\u0084\u0082\u0001"+
 		"\u0000\u0000\u0000\u0084\u0085\u0001\u0000\u0000\u0000\u0085\u0086\u0001"+
 		"\u0000\u0000\u0000\u0086\u0087\u0003\u0018\f\u0000\u0087\r\u0001\u0000"+
 		"\u0000\u0000\u0088\u008d\u0003\u0010\b\u0000\u0089\u008a\u0005\b\u0000"+
@@ -2660,7 +2660,7 @@ public class rustParser extends Parser {
 		"\u008c\u008f\u0001\u0000\u0000\u0000\u008d\u008b\u0001\u0000\u0000\u0000"+
 		"\u008d\u008e\u0001\u0000\u0000\u0000\u008e\u000f\u0001\u0000\u0000\u0000"+
 		"\u008f\u008d\u0001\u0000\u0000\u0000\u0090\u0093\u00032\u0019\u0000\u0091"+
-		"\u0092\u0005\u0003\u0000\u0000\u0092\u0094\u00032\u0019\u0000\u0093\u0091"+
+		"\u0092\u0005\u0003\u0000\u0000\u0092\u0094\u00030\u0018\u0000\u0093\u0091"+
 		"\u0001\u0000\u0000\u0000\u0093\u0094\u0001\u0000\u0000\u0000\u0094\u0011"+
 		"\u0001\u0000\u0000\u0000\u0095\u0096\u0005\t\u0000\u0000\u0096\u0097\u0003"+
 		"2\u0019\u0000\u0097\u0098\u0005\n\u0000\u0000\u0098\u0099\u0003.\u0017"+

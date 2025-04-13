@@ -180,9 +180,10 @@ export class MyVisitor extends rustVisitor<any> {
         for (let i = 0; i < ctx.statement().length; i++) {
             result = this.visit(ctx.statement(i));
         }
+        this.runScheduler();
         return result;
     }
-    
+
     public visitEqual = (ctx: any): boolean => {
         return this.visit(ctx.expression(0)) === this.visit(ctx.expression(1));
     };
@@ -286,7 +287,7 @@ export class MyVisitor extends rustVisitor<any> {
 
     public visitFunctionCall = (ctx: any): number => {
         const name = ctx.identifier().IDENTIFIER().getText();
-        // console.log(name)
+        console.log(name)
         if (name === "spawn") {
             // console.log("spawn called")
             const arg = ctx.argument_list()?.expression(0);

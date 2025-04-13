@@ -509,7 +509,7 @@ export class rustParser extends antlr.Parser {
                 this.state = 130;
                 this.match(rustParser.T__6);
                 this.state = 131;
-                this.identifier();
+                this.ty();
                 }
             }
 
@@ -587,7 +587,7 @@ export class rustParser extends antlr.Parser {
                 this.state = 145;
                 this.match(rustParser.T__2);
                 this.state = 146;
-                this.identifier();
+                this.ty();
                 }
             }
 
@@ -2001,11 +2001,11 @@ export class rustParser extends antlr.Parser {
         119,5,5,0,0,119,120,3,46,23,0,120,9,1,0,0,0,121,122,3,46,23,0,122,
         11,1,0,0,0,123,124,5,6,0,0,124,125,3,50,25,0,125,127,5,50,0,0,126,
         128,3,14,7,0,127,126,1,0,0,0,127,128,1,0,0,0,128,129,1,0,0,0,129,
-        132,5,51,0,0,130,131,5,7,0,0,131,133,3,50,25,0,132,130,1,0,0,0,132,
+        132,5,51,0,0,130,131,5,7,0,0,131,133,3,48,24,0,132,130,1,0,0,0,132,
         133,1,0,0,0,133,134,1,0,0,0,134,135,3,24,12,0,135,13,1,0,0,0,136,
         141,3,16,8,0,137,138,5,8,0,0,138,140,3,16,8,0,139,137,1,0,0,0,140,
         143,1,0,0,0,141,139,1,0,0,0,141,142,1,0,0,0,142,15,1,0,0,0,143,141,
-        1,0,0,0,144,147,3,50,25,0,145,146,5,3,0,0,146,148,3,50,25,0,147,
+        1,0,0,0,144,147,3,50,25,0,145,146,5,3,0,0,146,148,3,48,24,0,147,
         145,1,0,0,0,147,148,1,0,0,0,148,17,1,0,0,0,149,150,5,9,0,0,150,151,
         3,50,25,0,151,152,5,10,0,0,152,153,3,46,23,0,153,154,5,11,0,0,154,
         155,3,46,23,0,155,156,3,24,12,0,156,19,1,0,0,0,157,158,5,12,0,0,
@@ -2361,14 +2361,8 @@ export class FunctionDeclContext extends Function_declContext {
         super(ctx.parent, ctx.invokingState);
         super.copyFrom(ctx);
     }
-    public identifier(): IdentifierContext[];
-    public identifier(i: number): IdentifierContext | null;
-    public identifier(i?: number): IdentifierContext[] | IdentifierContext | null {
-        if (i === undefined) {
-            return this.getRuleContexts(IdentifierContext);
-        }
-
-        return this.getRuleContext(i, IdentifierContext);
+    public identifier(): IdentifierContext {
+        return this.getRuleContext(0, IdentifierContext)!;
     }
     public LPAREN(): antlr.TerminalNode {
         return this.getToken(rustParser.LPAREN, 0)!;
@@ -2381,6 +2375,9 @@ export class FunctionDeclContext extends Function_declContext {
     }
     public parameter_list(): Parameter_listContext | null {
         return this.getRuleContext(0, Parameter_listContext);
+    }
+    public ty(): TyContext | null {
+        return this.getRuleContext(0, TyContext);
     }
     public override enterRule(listener: rustListener): void {
         if(listener.enterFunctionDecl) {
@@ -2442,14 +2439,11 @@ export class ParameterContext extends antlr.ParserRuleContext {
     public constructor(parent: antlr.ParserRuleContext | null, invokingState: number) {
         super(parent, invokingState);
     }
-    public identifier(): IdentifierContext[];
-    public identifier(i: number): IdentifierContext | null;
-    public identifier(i?: number): IdentifierContext[] | IdentifierContext | null {
-        if (i === undefined) {
-            return this.getRuleContexts(IdentifierContext);
-        }
-
-        return this.getRuleContext(i, IdentifierContext);
+    public identifier(): IdentifierContext {
+        return this.getRuleContext(0, IdentifierContext)!;
+    }
+    public ty(): TyContext | null {
+        return this.getRuleContext(0, TyContext);
     }
     public override get ruleIndex(): number {
         return rustParser.RULE_parameter;

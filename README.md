@@ -8,6 +8,16 @@ https://oshindow.github.io/test_antlr_conductor/index.js
 
 https://www.antlr-ng.org/documentation/grammars/lexer-rules
 
+
+# Homework 3 idealized VM
+1. const test 
+2. const parse_compile_run # compile syntax tree into vm code
+    compile_program(parse_to_json(program)) # compile program into instruction array instrs, 
+        wc = 0 # wc (write counter)
+        instrs = []
+        compile(program) # compile component into instruction array instrs, 
+    run() # run code
+
 ## starting point:
 Refer to Sam's repository: https://github.com/tsammeow/conductor-runner-example
 I have forked it and made some configuartion changes to make it work with ANTLR.
