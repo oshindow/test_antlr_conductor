@@ -5,6 +5,7 @@ import {
   AddContext,
   NumberContext,
   ParenExprContext,
+  StructInitContext,
   Expression_stmtContext,
   Function_declContext,
   FunctionCallContext,
@@ -14,14 +15,18 @@ import {
   Assign_stmtContext,
   StartContext,
   StatementContext,
-  VariableReferenceContext
+  VariableReferenceContext,
+  FieldAccessContext,
+  EnumAccessContext,
+  EnumStructInitContext,
+  MatchExprContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
 import { rustVisitor } from "./parser/rustVisitor.js";
 
 export type Instruction =
-  | { tag: 'LDC'; val: number }
+  | { tag: 'LDC'; val: any }
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
   | { tag: 'BINOP'; sym: string }
@@ -37,7 +42,8 @@ export type Instruction =
   | { tag: 'DONE' } 
   | { tag: 'SPAWN' }         
   | { tag: 'YIELD' }          
-  | { tag: 'JOIN' };  
+  | { tag: 'JOIN' }
+  | { tag: 'GETFIELD' }; // New instruction for field access
 
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -182,4 +188,52 @@ export class CompileVisitor
       this.instrs.push({ tag: 'LD', sym: name });
   }
 
+
+  visitStructInit(ctx: StructInitContext): void {
+    const typeName = ctx.identifier().getText(); // User
+    const fields = ctx.field_init_list()?.field_init() ?? [];
+  
+    const obj: Record<string, any> = { __struct: typeName };
+  
+    for (const field of fields) {
+      const key = field.identifier().getText();
+      const expr = field.expression();
+      this.visit(expr);  // compile value expression
+      this.instrs.push({ tag: 'ASSIGN', sym: key });
+      this.instrs.push({ tag: 'POP' });
+    }
+  
+    this.instrs.push({ tag: 'LDC', val: obj }); // push struct shell
+  }
+  
+  visitFieldAccess(ctx: FieldAccessContext): void {
+    this.visit(ctx.expression()); // compile the left-hand expression
+    const fieldName = ctx.identifier().getText();
+    this.instrs.push({ tag: 'LDC', val: fieldName });
+    this.instrs.push({ tag: 'GETFIELD' });
+  }
+  
+  visitEnumAccess(ctx: EnumAccessContext): void {
+    const enumName = ctx.identifier(0).getText(); // Book
+    const variant = ctx.identifier(1).getText();  // Papery
+    this.instrs.push({ tag: 'LDC', val: { __enum: enumName, tag: variant } });
+  }
+  
+  visitEnumStructInit(ctx: EnumStructInitContext): void {
+    const enumName = ctx.identifier(0).getText();
+    const variant = ctx.identifier(1).getText();
+    const fields = ctx.field_init_list()?.field_init() ?? [];
+    const val: any = { __enum: enumName, tag: variant };
+  
+    for (const field of fields) {
+      const key = field.identifier().getText();
+      this.visit(field.expression());
+      this.instrs.push({ tag: 'ASSIGN', sym: key });
+      this.instrs.push({ tag: 'POP' });
+    }
+  
+    this.instrs.push({ tag: 'LDC', val });
+  }
+
+  
 }

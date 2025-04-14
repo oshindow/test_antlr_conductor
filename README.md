@@ -17,7 +17,11 @@ https://www.antlr-ng.org/documentation/grammars/lexer-rules
         instrs = []
         compile(program) # compile component into instruction array instrs, 
     run() # run code
-
+assignment, function, block
+a. sequence
+b. conditional
+c. lambda
+d. 
 ## starting point:
 Refer to Sam's repository: https://github.com/tsammeow/conductor-runner-example
 I have forked it and made some configuartion changes to make it work with ANTLR.

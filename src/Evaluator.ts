@@ -17,13 +17,14 @@ export type Instruction =
   | { tag: 'DONE' }
   | { tag: 'SPAWN' }
   | { tag: 'YIELD' }
-  | { tag: 'JOIN' };
+  | { tag: 'JOIN' }
+  | { tag: 'GETFIELD' }; // New instruction for field access
 
 interface ThreadContext {
-  pc: number;
-  stack: any[];
-  env: Record<string, any>[];
-  rts: { addr: number; env: Record<string, any>[] }[];
+  pc: number; // program counter
+  stack: any[]; // opreand stack
+  env: Record<string, any>[]; // environment
+  rts: { addr: number; env: Record<string, any>[] }[]; // runtime stack
   timeBudget: number;
 }
 
@@ -166,6 +167,16 @@ export class ConcurrentEvaluator {
           case 'JOIN':
             this.advance();
             break;
+
+          case 'GETFIELD': {
+            const field = this.activeThread.stack.pop();
+            const obj = this.activeThread.stack.pop();
+            if (typeof obj !== 'object') throw new Error('Cannot access field of non-object');
+            this.activeThread.stack.push(obj[field]);
+            this.advance();
+            break;
+          }
+            
         }
       }
 
@@ -193,9 +204,17 @@ export class ConcurrentEvaluator {
         frame[sym] = val;
         return;
       }
+       
+      if (typeof frame[sym] === 'object' && frame[sym] !== null) {
+        if (sym in frame[sym]) {
+          frame[sym][sym] = val;
+          return;
+        }
+      }
     }
     this.activeThread!.env[0][sym] = val;
   }
+  
 
   private extend(prms: string[], args: any[], env: Record<string, any>[]): Record<string, any>[] {
     console.log("Extending with params:", prms, "and args:", args);
