@@ -107,7 +107,11 @@ if_stmt:
 
 
 expression:
-    expression '==' expression   # equal
+    '!' expression                  # logicalNot
+    | '-' expression                # unaryMinus
+    | expression '&&' expression    # logicalAnd
+    | expression '||' expression    # logicalOr
+    | expression '==' expression   # equal
     | expression '!=' expression   # notEqual
     | expression '<' expression    # lessThan
     | expression '<=' expression   # lessEqual
@@ -115,9 +119,11 @@ expression:
     | expression '>=' expression   # greaterEqual
     | expression '*' expression   # multiply
     | expression '/' expression # divide
+    | expression '%' expression # divide
     | expression '+' expression # add
     | expression '-' expression # subtract
     | number                    # simple
+    | 'println!' LPAREN argument_list? RPAREN   # printlnMacro
     | identifier LPAREN argument_list? RPAREN  # functionCall
     | identifier                # variableReference
     | block                     # blockExpr

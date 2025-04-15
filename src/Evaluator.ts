@@ -5,6 +5,7 @@ export type Instruction =
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
   | { tag: 'BINOP'; sym: string }
+  | { tag: 'UNARY'; sym: string }
   | { tag: 'LDF'; prms: string[]; addr: number }
   | { tag: 'CALL'; arity: number }
   | { tag: 'TAIL_CALL'; arity: number }
@@ -18,6 +19,7 @@ export type Instruction =
   | { tag: 'SPAWN' }
   | { tag: 'YIELD' }
   | { tag: 'JOIN' }
+  | { tag: 'PRINT'}
   | { tag: 'GETFIELD' }; // New instruction for field access
 
 interface ThreadContext {
@@ -66,6 +68,23 @@ export class ConcurrentEvaluator {
             break;
           }
 
+          case 'PRINT': {
+            const val = this.activeThread.stack.pop();
+        
+            if (val === undefined) {
+                console.log('undefined');
+            } else if (val === null) {
+                console.log('null');
+            } else if (typeof val === 'object') {
+                console.log(JSON.stringify(val, null, 2));
+            } else {
+                console.log(val);
+            }
+        
+            this.advance();
+            break;
+        }
+        
           case 'BINOP': {
             const right = this.activeThread.stack.pop();
             const left = this.activeThread.stack.pop();
@@ -73,6 +92,14 @@ export class ConcurrentEvaluator {
             this.advance();
             break;
           }
+
+          case 'UNARY': {
+            const value = this.activeThread.stack.pop();
+            this.activeThread.stack.push(this.applyUnaryOp(instr.sym, value));
+            this.advance();
+            break;
+          }
+          
 
           case 'LDF': {
             const closure = {
@@ -240,6 +267,21 @@ export class ConcurrentEvaluator {
         throw new Error(`Unknown binary operator: ${op}`);
     }
   }
+
+  private applyUnaryOp(op: string, value: any): any {
+    switch (op) {
+      case '-':
+        if (typeof value !== 'number') throw new Error(`Unary '-' requires a number`);
+        return -value;
+  
+      case '!':
+        return !value;
+  
+      default:
+        throw new Error(`Unknown unary operator: ${op}`);
+    }
+  }
+  
 
   private createThread(): ThreadContext {
     return {

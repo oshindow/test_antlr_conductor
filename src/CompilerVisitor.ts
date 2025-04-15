@@ -19,7 +19,23 @@ import {
   FieldAccessContext,
   EnumAccessContext,
   EnumStructInitContext,
-  MatchExprContext
+  MatchExprContext,
+  If_stmtContext,
+  While_stmtContext,
+  LogicalAndContext,
+  LogicalOrContext,
+  UnaryMinusContext,
+  LogicalNotContext,
+  SubtractContext,
+  GreaterEqualContext,
+  GreaterThanContext,
+  LessEqualContext,
+  LessThanContext,
+  NotEqualContext,
+  EqualContext,
+  DivideContext,
+  For_stmtContext,
+  PrintlnMacroContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -29,6 +45,7 @@ export type Instruction =
   | { tag: 'LDC'; val: any }
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
+  | { tag: 'UNARY'; sym: string }
   | { tag: 'BINOP'; sym: string }
   | { tag: 'LDF'; prms: string[]; addr: number }
   | { tag: 'CALL'; arity: number }
@@ -43,7 +60,9 @@ export type Instruction =
   | { tag: 'SPAWN' }         
   | { tag: 'YIELD' }          
   | { tag: 'JOIN' }
-  | { tag: 'GETFIELD' }; // New instruction for field access
+  | { tag: 'GETFIELD' } // New instruction for field access
+  | { tag: 'PRINT' };
+
 
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -72,6 +91,59 @@ export class CompileVisitor
       this.instrs.push({ tag: "BINOP", sym: op });
   }
 
+  visitSubtract(ctx: SubtractContext): void {
+    this.visit(ctx.expression(0));  // Left operand
+    this.visit(ctx.expression(1));  // Right operand
+    this.instrs.push({ tag: 'BINOP', sym: '-' });
+ }
+
+ visitDivide(ctx: DivideContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '/' });
+}
+
+visitMod(ctx: DivideContext): void {
+    this.visit(ctx.expression(0)); 
+    this.visit(ctx.expression(1)); 
+    this.instrs.push({ tag: 'BINOP', sym: '%' });
+}
+
+visitEqual(ctx: EqualContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '==' });
+}
+
+visitNotEqual(ctx: NotEqualContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '!=' });
+}
+
+visitLessThan(ctx: LessThanContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '<' });
+}
+
+visitLessEqual(ctx: LessEqualContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '<=' });
+}
+
+visitGreaterThan(ctx: GreaterThanContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '>' });
+}
+
+visitGreaterEqual(ctx: GreaterEqualContext): void {
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '>=' });
+}
 
   visitFunctionDecl(ctx: Function_declContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
@@ -92,6 +164,22 @@ export class CompileVisitor
       gotoPlaceholder.addr = this.instrs.length;
       this.instrs.push({ tag: 'ASSIGN', sym: name });
   }
+
+  visitPrintlnMacro(ctx: PrintlnMacroContext): void {
+    const args = ctx.argument_list()?.expression() ?? [];
+
+    for (const expr of args) {
+        this.visit(expr); // Push values to stack
+    }
+
+    // You could also support printing multiple values
+    for (let i = 0; i < args.length; i++) {
+        this.instrs.push({ tag: 'PRINT' });
+    }
+
+    this.instrs.push({ tag: 'POP' }); // Clean up last expression result if needed
+ }
+
 
   visitFunctionCall(ctx: FunctionCallContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
@@ -180,7 +268,11 @@ export class CompileVisitor
           this.visitFunctionDecl(ctx.function_decl()!);
       } else if (ctx.block()) {
           this.visitBlock(ctx.block()!);
-      }
+      } else if (ctx.if_stmt()) {
+        this.visitIfExpr(ctx.if_stmt());
+      } else if (ctx.while_stmt()) {
+        this.visitWhileExpr(ctx.while_stmt()!);
+    }
   }
 
   visitVariableReference(ctx: VariableReferenceContext): void {
@@ -235,5 +327,103 @@ export class CompileVisitor
     this.instrs.push({ tag: 'LDC', val });
   }
 
-  
+    visitIfExpr(ctx: If_stmtContext): void {
+        this.visit(ctx.expression());
+
+        // Emit a JOF (jump on false) with placeholder
+        const jofInstr: Instruction = { tag: 'JOF', addr: -1 };
+        this.instrs.push(jofInstr);
+
+        // Compile the 'then' block
+        this.visit(ctx.block(0));
+
+        const gotoAfterThen: Instruction = { tag: 'GOTO', addr: -1 };
+        this.instrs.push(gotoAfterThen);
+
+        // Fix the JOF to jump here if condition is false
+        jofInstr.addr = this.instrs.length;
+
+        if (ctx.block().length > 1) {
+            this.visit(ctx.block(1));
+        } else {
+            // If there's no else, push undefined as result
+            this.instrs.push({ tag: 'LDC', val: undefined });
+        }
+        // Fix the GOTO to skip over else
+        gotoAfterThen.addr = this.instrs.length;
+
+    }
+
+    visitWhileExpr(ctx: While_stmtContext): void {
+        const startAddr = this.instrs.length;
+    
+        // Compile the condition
+        this.visit(ctx.expression());
+    
+        // Insert conditional jump (JOF) with placeholder
+        const jofInstr: Instruction = { tag: 'JOF', addr: -1 };
+        this.instrs.push(jofInstr);
+    
+        // Compile the body
+        this.visit(ctx.block());
+    
+        // Jump back to the start to re-evaluate the condition
+        this.instrs.push({ tag: 'GOTO', addr: startAddr });
+    
+        // Update JOF to jump past the loop if condition fails
+        jofInstr.addr = this.instrs.length;
+    }
+
+    visitForExpr(ctx: For_stmtContext): void {
+        this.visit(ctx.expression(0));  
+
+        const loopStart = this.instrs.length;
+    
+        // Visit the condition (guard)
+        this.visit(ctx.expression(1));  
+        const conditionAddr = this.instrs.length;  
+    
+        this.instrs.push({ tag: 'JOF', addr: -1 });
+    
+        // Visit the body (statements inside the loop)
+        this.visit(ctx.block());  // Visit the loop's body statements
+    
+        // Visit the update (increment, decrement, or modification)
+        this.visit(ctx.expression(2));  // The third expression is the update, e.g., `i = i + 1`
+    
+        // Jump back to the condition to check again
+        this.instrs.push({ tag: 'GOTO', addr: loopStart });
+
+        const condJumpInstr = this.instrs[conditionAddr];
+        if (condJumpInstr.tag === 'JOF') {
+            condJumpInstr.addr = this.instrs.length;
+        } else {
+            throw new Error('Expected JOF instruction at condition jump address');
+        }
+        
+    }
+       
+    
+    visitLogicalAnd(ctx: LogicalAndContext): void {
+        this.visit(ctx.expression(0));
+        this.visit(ctx.expression(1));
+        this.instrs.push({ tag: "BINOP", sym: "&&" });
+    }
+    
+    visitLogicalOr(ctx: LogicalOrContext): void {
+        this.visit(ctx.expression(0));
+        this.visit(ctx.expression(1));
+        this.instrs.push({ tag: "BINOP", sym: "||" });
+    }
+    
+    visitUnaryMinus(ctx: UnaryMinusContext): void {
+        this.visit(ctx.expression());
+        this.instrs.push({ tag: "UNARY", sym: "-" });
+    }
+    
+    visitLogicalNot(ctx: LogicalNotContext): void {
+        this.visit(ctx.expression());
+        this.instrs.push({ tag: "UNARY", sym: "!" });
+    }
+    
 }
