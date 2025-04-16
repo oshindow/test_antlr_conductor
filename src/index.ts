@@ -7,13 +7,8 @@ import { CompileVisitor } from "./CompilerVisitor.js";
 
 
 const input = `
-enum Book {
-    Papery, Electronic
-}
-
-let book = Book::Papery;
-
-book
+let x = 1;
+x = x + 1;
 `;
 
 const inputStream = CharStream.fromString(input);

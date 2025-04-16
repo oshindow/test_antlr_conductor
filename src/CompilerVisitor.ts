@@ -19,7 +19,9 @@ import {
   FieldAccessContext,
   EnumAccessContext,
   EnumStructInitContext,
-  MatchExprContext
+  MatchExprContext,
+  ExpressionContext,
+  BoolLiteralContext,
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -45,11 +47,17 @@ export type Instruction =
   | { tag: 'JOIN' }
   | { tag: 'GETFIELD' }; // New instruction for field access
 
+// type environment
+type Type = "i32" | "bool" | "String" | "f64";
+
+type TypeEnv = Record<string, Type>[];
+  
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
   implements rustVisitor<void>
 {
   public instrs: Instruction[] = [];
+  public typeEnv: TypeEnv = [{}];
 
   defaultResult(): void {}
 
@@ -147,16 +155,40 @@ export class CompileVisitor
       this.instrs.push({ tag: 'EXIT_SCOPE' });
   }
 
-  visitLet_stmt(ctx: Let_stmtContext): void {
-      const name = ctx.identifier().IDENTIFIER().getText();
-      if (ctx.expression()) {
-          this.visit(ctx.expression());
-          this.instrs.push({ tag: 'ASSIGN', sym: name });
-      } else {
-          this.instrs.push({ tag: 'LDC', val: undefined });
-          this.instrs.push({ tag: 'ASSIGN', sym: name });
-      }
-  }
+//   visitLet_stmt(ctx: Let_stmtContext): void {
+//       const name = ctx.identifier().IDENTIFIER().getText();
+//       if (ctx.expression()) {
+//           this.visit(ctx.expression());
+//           this.instrs.push({ tag: 'ASSIGN', sym: name });
+//       } else {
+//           this.instrs.push({ tag: 'LDC', val: undefined });
+//           this.instrs.push({ tag: 'ASSIGN', sym: name });
+//       }
+//   }
+visitLet_stmt(ctx: Let_stmtContext): void {
+    const name = ctx.identifier().IDENTIFIER().getText();
+    let declaredType: Type | undefined;
+
+    if (ctx.ty()) {
+        declaredType = ctx.ty().getText() as Type;
+    }
+
+    if (ctx.expression()) {
+        const inferredType = this.inferType(ctx.expression());
+        if (declaredType && declaredType !== inferredType) {
+            throw new Error(`Type mismatch in let: expected ${declaredType}, got ${inferredType}`);
+        }
+        this.assignType(this.typeEnv, name, inferredType);
+        this.visit(ctx.expression());
+        this.instrs.push({ tag: 'ASSIGN', sym: name });
+    } else {
+        if (!declaredType) throw new Error(`Cannot infer type for let-binding without expression or annotation`);
+        this.assignType(this.typeEnv, name, declaredType);
+        this.instrs.push({ tag: 'LDC', val: undefined });
+        this.instrs.push({ tag: 'ASSIGN', sym: name });
+    }
+}
+
 
   visitAssign_stmt(ctx: Assign_stmtContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
@@ -190,7 +222,7 @@ export class CompileVisitor
 
 
   visitStructInit(ctx: StructInitContext): void {
-    const typeName = ctx.identifier().getText(); // User
+    const typeName = ctx.identifier().getText();  
     const fields = ctx.field_init_list()?.field_init() ?? [];
   
     const obj: Record<string, any> = { __struct: typeName };
@@ -234,6 +266,42 @@ export class CompileVisitor
   
     this.instrs.push({ tag: 'LDC', val });
   }
+
+  lookupType(env: TypeEnv, sym: string): Type {
+    for (const frame of env) {
+      if (sym in frame) return frame[sym];
+    }
+    throw new Error(`Unbound variable: ${sym}`);
+  }
+  
+  assignType(env: TypeEnv, sym: string, ty: Type): void {
+    env[0][sym] = ty;
+  }
+
+  inferType(expr: ExpressionContext): Type {
+    if (expr instanceof SimpleContext) {
+        return "i32";
+    }
+    if (expr instanceof BoolLiteralContext) {
+        return "bool";
+    }
+    if (expr instanceof VariableReferenceContext) {
+        const name = expr.identifier().IDENTIFIER().getText();
+        return this.lookupType(this.typeEnv, name);
+    }
+    if (expr instanceof AddContext || expr instanceof MultiplyContext) {
+        const left = this.inferType(expr.expression(0));
+        const right = this.inferType(expr.expression(1));
+        if (left === "i32" && right === "i32") return "i32";
+        throw new Error(`Operator +/* requires two i32, got ${left}, ${right}`);
+    }
+    if (expr instanceof FunctionCallContext) {
+        // optional: add function type annotation for lookup
+        return "i32"; // or use function return type table
+    }
+    // TODO: support other types
+    throw new Error("Unsupported expression in type inference");
+    }
 
   
 }

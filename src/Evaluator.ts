@@ -49,6 +49,7 @@ export class ConcurrentEvaluator {
         switch (instr.tag) {
           case 'LDC':
             this.activeThread.stack.push(instr.val);
+            console.log("LDC: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
             this.advance();
             break;
 
@@ -56,6 +57,7 @@ export class ConcurrentEvaluator {
             const val = this.lookup(instr.sym);
             this.activeThread.stack.push(val);
             this.advance();
+            console.log("LD: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
             break;
           }
 
@@ -63,6 +65,7 @@ export class ConcurrentEvaluator {
             const val = this.activeThread.stack[this.activeThread.stack.length - 1];
             this.assign(instr.sym, val);
             this.advance();
+            console.log("ASSIGN: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
             break;
           }
 
@@ -83,6 +86,8 @@ export class ConcurrentEvaluator {
             };
             this.activeThread.stack.push(closure);
             this.advance();
+            console.log("LDF: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+          
             break;
           }
 
@@ -96,6 +101,7 @@ export class ConcurrentEvaluator {
             this.activeThread.rts.push({ addr: this.activeThread.pc + 1, env: this.activeThread.env });
             this.activeThread.env = this.extend(func.prms, args, func.env);
             this.activeThread.pc = func.addr;
+            console.log("CALL: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
             break;
           }
 
@@ -142,6 +148,7 @@ export class ConcurrentEvaluator {
           case 'POP':
             this.activeThread.stack.pop();
             this.advance();
+            console.log("POP: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
             break;
 
           case 'DONE':
@@ -189,6 +196,7 @@ export class ConcurrentEvaluator {
   private advance() {
     this.activeThread!.pc++;
     this.activeThread!.timeBudget--;
+    
   }
 
   private lookup(sym: string): any {

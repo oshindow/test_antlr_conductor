@@ -1,5 +1,5 @@
 yarn generate-parser
 # yarn build
 git add .
-git commit -m "adding object oritented code: enum, struct" 
+git commit -m "adding typechecker" 
 git push origin compiler
