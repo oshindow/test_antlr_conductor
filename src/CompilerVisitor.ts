@@ -40,9 +40,9 @@ import {
   PrintlnMacroContext
 } from "./parser/rustParser.js";
 
-import { AbstractParseTreeVisitor, ParseTree } from "antlr4ng";
+import { AbstractParseTreeVisitor } from "antlr4ng";
 import { rustVisitor } from "./parser/rustVisitor.js";
-import { isFunction } from "util";
+import { TypeChecker, Type, TypeEnv, extendTypeEnv, builtInTypes, equalTypes } from "./TypeChecker";
 
 export type Instruction =
   | { tag: 'LDC'; val: any }
@@ -63,59 +63,8 @@ export type Instruction =
   | { tag: 'SPAWN' }         
   | { tag: 'YIELD' }          
   | { tag: 'JOIN' }
-  | { tag: 'GETFIELD' } // New instruction for field access
+  | { tag: 'GETFIELD' }
   | { tag: 'PRINT' };
-
-
-// type environment
-type Type = "number" | "bool" | "undefined" | [Type[], Type];
-
-const builtInTypes: Record<string, [Type[], Type]> = {
-    "+": [["number", "number"], "number"],
-    "-": [["number", "number"], "number"],
-    "*": [["number", "number"], "number"],
-    "/": [["number", "number"], "number"],
-    "%": [["number", "number"], "number"],
-  
-    "==": [["number", "number"], "bool"],
-    "!=": [["number", "number"], "bool"],
-    "<": [["number", "number"], "bool"],
-    ">": [["number", "number"], "bool"],
-    "<=": [["number", "number"], "bool"],
-    ">=": [["number", "number"], "bool"],
-  
-    "&&": [["bool", "bool"], "bool"],
-    "||": [["bool", "bool"], "bool"],
-    "!": [["bool"], "bool"],
-    "-unary": [["number"], "number"],
-  };
-  
-  
-type TypeEnv = Record<string, Type>[];
-
-// function equalType(t1: Type, t2: Type[]): boolean {
-//     return JSON.stringify(t1) === JSON.stringify(t2);
-//   }
-  
-function equalTypes(ts1: Type[], ts2: Type[]): boolean {
-    return JSON.stringify(ts1) === JSON.stringify(ts2);
-  }
-
-function extendTypeEnv(vars: string[], types: Type[], env: TypeEnv): TypeEnv {
-    if (vars.length !== types.length) {
-      throw new Error(
-        vars.length > types.length
-          ? "too few parameters in function declaration"
-          : "too many parameters in function declaration"
-      );
-    }
-  
-    const frame: Record<string, Type> = {};
-    for (let i = 0; i < vars.length; i++) {
-      frame[vars[i]] = types[i];
-    }
-    return [frame, ...env];
-  }
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
