@@ -44,6 +44,8 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 import { rustVisitor } from "./parser/rustVisitor.js";
 import { TypeChecker, Type, TypeEnv, extendTypeEnv, builtInTypes, equalTypes } from "./TypeChecker";
 
+const typeChecker = new TypeChecker();
+
 export type Instruction =
   | { tag: 'LDC'; val: any }
   | { tag: 'LD'; sym: string }
@@ -453,170 +455,22 @@ visitLet_stmt(ctx: Let_stmtContext): void {
   }
 
   lookupType(env: TypeEnv, sym: string): Type {
-    for (const frame of env) {
-      if (sym in frame) return frame[sym];
-    }
-    throw new Error(`Unbound variable: ${sym}`);
+    return typeChecker.lookupType(env, sym);
   }
   
   assignType(env: TypeEnv, sym: string, ty: Type): void {
-    env[0][sym] = ty;
+    typeChecker.assignType(env, sym, ty);
   }
 
   inferType(expr: ExpressionContext, env: TypeEnv): Type {
-    if (expr instanceof SimpleContext) {
-      return "number";
-    }
-  
-    if (expr instanceof BoolLiteralContext) {
-      return "bool";
-    }
-  
-    if (expr instanceof VariableReferenceContext) {
-      const name = expr.identifier().IDENTIFIER().getText();
-      console.log("type env", env, name)
-      return this.lookupType(env, name);
-    }
-  
-    const bin = (op: string, left: ExpressionContext, right: ExpressionContext): Type => {
-      const sig = builtInTypes[op];
-      if (!sig) throw new Error(`Unknown operator ${op}`);
-      const [expectedArgs, returnType] = sig;
-      const leftType = this.inferType(left, env);
-      const rightType = this.inferType(right, env);
-    //   console.log("leftType", leftType, rightType, expectedArgs)
-      if (!equalTypes([leftType, rightType], expectedArgs)) {
-        throw new Error(`Operator ${op} expects ${expectedArgs.join(", ")}, got ${leftType}, ${rightType}`);
-      }
-      return returnType;
-     
-    };
-  
-    const un = (op: string, operand: ExpressionContext): Type => {
-      const sig = builtInTypes[op];
-      if (!sig) throw new Error(`Unknown operator ${op}`);
-      const [expectedArgs, returnType] = sig;
-      const argType = this.inferType(operand, env);
-    //   console.log("leftType", expectedArgs)
-      if (!equalTypes([argType], expectedArgs)) {
-        throw new Error(`Operator ${op} expects ${expectedArgs}, got ${argType}`);
-      }
-      return returnType;
-    };
-  
-    if (expr instanceof AddContext) return bin("+", expr.expression(0), expr.expression(1));
-    if (expr instanceof SubtractContext) return bin("-", expr.expression(0), expr.expression(1));
-    if (expr instanceof MultiplyContext) return bin("*", expr.expression(0), expr.expression(1));
-    if (expr instanceof DivideContext) return bin("/", expr.expression(0), expr.expression(1));
-    if (expr instanceof EqualContext) return bin("==", expr.expression(0), expr.expression(1));
-    if (expr instanceof NotEqualContext) return bin("!=", expr.expression(0), expr.expression(1));
-    if (expr instanceof LessThanContext) return bin("<", expr.expression(0), expr.expression(1));
-    if (expr instanceof GreaterThanContext) return bin(">", expr.expression(0), expr.expression(1));
-    if (expr instanceof LessEqualContext) return bin("<=", expr.expression(0), expr.expression(1));
-    if (expr instanceof GreaterEqualContext) return bin(">=", expr.expression(0), expr.expression(1));
-    if (expr instanceof LogicalAndContext) return bin("&&", expr.expression(0), expr.expression(1));
-    if (expr instanceof LogicalOrContext) return bin("||", expr.expression(0), expr.expression(1));
-    if (expr instanceof LogicalNotContext) return un("!", expr.expression());
-    if (expr instanceof UnaryMinusContext) return un("-unary", expr.expression());
-
-    if (expr instanceof FunctionCallContext) {
-      const name = expr.identifier().IDENTIFIER().getText();
-      console.log("name", name)
-      const funType = builtInTypes[name] ?? this.lookupType(env, name);
-      console.log("funType", funType)
-      if (!Array.isArray(funType)) throw new Error(`${name} is not callable`);
-    //   console.log("")
-      const [expectedArgs, returnType] = funType;
-      const actualArgTypes = (expr.argument_list()?.expression() ?? []).map(e => this.inferType(e, env));
-      console.log("actualArgTypes", actualArgTypes, expectedArgs)
-      if (actualArgTypes.length !== expectedArgs.length) {
-        throw new Error(`Function application error: ${name} expects ${expectedArgs.length} argument(s), got ${actualArgTypes.length}`);
-      }
-      
-      if (!equalTypes(actualArgTypes, expectedArgs)) {
-        throw new Error(`Function ${name} expects (${expectedArgs.join(", ")}), got (${actualArgTypes.join(", ")})`);
-      }
-      return returnType;
-    }
-    
-    if (expr instanceof If_stmtContext) {
-        const condType = this.inferType(expr.expression(), env);
-        if (condType !== "bool") {
-          throw new Error(`Expected predicate type: bool, actual predicate type: ${condType}`);
-        }
-      
-        const thenType = this.inferType(expr.block(0), env);
-        let elseType: Type = "undefined";
-        if (expr.block().length > 1) {
-          elseType = this.inferType(expr.block(1), env);
-        }
-      
-        if (!equalTypes([thenType], [elseType])) {
-          throw new Error(`Types of branches not matching; consequent type: ${thenType}, alternative type: ${elseType}`);
-        }
-      
-        return thenType;
-      }
-      
-      
-
-    throw new Error(`Unsupported expression type: ${expr.constructor.name}`);
-      
+    // Delegate all type inference to the external TypeChecker
+    return typeChecker.inferType(expr, env);
   }
+
   inferFunctionBodyType(body: BlockContext, env: TypeEnv): Type {
-    const statements = body.statement();
-    const returnTypes: Type[] = [];
-  
-    for (const stmt of statements) {
-        // console.log("stmt", stmt)
-        const letStmt = stmt.let_stmt?.();
-        if (letStmt) {
-          const name = letStmt.identifier().IDENTIFIER().getText();
-          let inferred: Type;
-      
-          if (letStmt.ty()) {
-            inferred = letStmt.ty().getText() as Type;
-          } else if (letStmt.expression()) {
-            inferred = this.inferType(letStmt.expression(), env);
-          } else {
-            throw new Error(`Cannot infer type for variable '${name}'`);
-          }
-      
-          this.assignType(env, name, inferred);
-        }
-
-      const ret = stmt.return_stmt?.();
-      if (ret) {
-        const retExpr = ret.expression();
-        returnTypes.push(this.inferType(retExpr, env));
-        break; // exit loop on first return
-      }
-    }
-  
-    if (returnTypes.length === 0) {
-      const trailingExpr = body.expression();
-    //   console.log("trailingExpr", trailingExpr)
-      if (trailingExpr) {
-        // const expr = trailingExpr.expression();
-        // console.log("")
-        returnTypes.push(this.inferType(trailingExpr, env));
-        console.log("returnTypes", returnTypes, env)
-     //   return trailingExpr ? this.inferType(trailingExpr, env) : "undefined";
-        }
-    }
-  
-    // Check all return types are consistent
-    const first = returnTypes[0];
-    for (const t of returnTypes) {
-      if (t !== first) {
-        throw new Error(`return type mismatch in function body`);
-      }
-    }
-    console.log("first", first)
-    return first;
+    // Delegate function body type inference to the external TypeChecker
+    return typeChecker.inferFunctionBodyType(body, env);
   }
-  
-
   
     visitIfExpr(ctx: If_stmtContext): void {
         this.visit(ctx.expression());
