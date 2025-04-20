@@ -5,6 +5,7 @@ export type Instruction =
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
   | { tag: 'BINOP'; sym: string }
+  | { tag: 'UNARY'; sym: string }
   | { tag: 'LDF'; prms: string[]; addr: number }
   | { tag: 'CALL'; arity: number }
   | { tag: 'TAIL_CALL'; arity: number }
@@ -18,11 +19,12 @@ export type Instruction =
   | { tag: 'SPAWN' }
   | { tag: 'YIELD' }
   | { tag: 'JOIN' }
+  | { tag: 'PRINT'}
   | { tag: 'GETFIELD' }; // New instruction for field access
 
 interface ThreadContext {
   pc: number; // program counter
-  stack: any[]; // opreand stack
+  stack: any[]; // operand stack
   env: Record<string, any>[]; // environment
   rts: { addr: number; env: Record<string, any>[] }[]; // runtime stack
   timeBudget: number;
@@ -49,7 +51,7 @@ export class ConcurrentEvaluator {
         switch (instr.tag) {
           case 'LDC':
             this.activeThread.stack.push(instr.val);
-            console.log("LDC: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("LDC: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             this.advance();
             break;
 
@@ -57,7 +59,7 @@ export class ConcurrentEvaluator {
             const val = this.lookup(instr.sym);
             this.activeThread.stack.push(val);
             this.advance();
-            console.log("LD: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("LD: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             break;
           }
 
@@ -65,10 +67,27 @@ export class ConcurrentEvaluator {
             const val = this.activeThread.stack[this.activeThread.stack.length - 1];
             this.assign(instr.sym, val);
             this.advance();
-            console.log("ASSIGN: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("ASSIGN: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             break;
           }
 
+          case 'PRINT': {
+            const val = this.activeThread.stack.pop();
+        
+            if (val === undefined) {
+                console.log('undefined');
+            } else if (val === null) {
+                console.log('null');
+            } else if (typeof val === 'object') {
+                console.log(JSON.stringify(val, null, 2));
+            } else {
+                console.log(val);
+            }
+        
+            this.advance();
+            break;
+        }
+        
           case 'BINOP': {
             const right = this.activeThread.stack.pop();
             const left = this.activeThread.stack.pop();
@@ -76,6 +95,14 @@ export class ConcurrentEvaluator {
             this.advance();
             break;
           }
+
+          case 'UNARY': {
+            const value = this.activeThread.stack.pop();
+            this.activeThread.stack.push(this.applyUnaryOp(instr.sym, value));
+            this.advance();
+            break;
+          }
+          
 
           case 'LDF': {
             const closure = {
@@ -86,7 +113,7 @@ export class ConcurrentEvaluator {
             };
             this.activeThread.stack.push(closure);
             this.advance();
-            console.log("LDF: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("LDF: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
           
             break;
           }
@@ -101,7 +128,7 @@ export class ConcurrentEvaluator {
             this.activeThread.rts.push({ addr: this.activeThread.pc + 1, env: this.activeThread.env });
             this.activeThread.env = this.extend(func.prms, args, func.env);
             this.activeThread.pc = func.addr;
-            console.log("CALL: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("CALL: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             break;
           }
 
@@ -127,12 +154,16 @@ export class ConcurrentEvaluator {
             for (const sym of instr.syms) frame[sym] = undefined;
             this.activeThread.env.unshift(frame);
             this.advance();
+            console.log("ENTER_SCOPE: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
+            
             break;
           }
 
           case 'EXIT_SCOPE':
             this.activeThread.env.shift();
             this.advance();
+            console.log("EXIT_SCOPE: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
+            
             break;
 
           case 'GOTO':
@@ -148,7 +179,7 @@ export class ConcurrentEvaluator {
           case 'POP':
             this.activeThread.stack.pop();
             this.advance();
-            console.log("POP: opreand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts);
+            console.log("POP: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, this.activeThread!.rts, "env:", this.activeThread!.env);
             break;
 
           case 'DONE':
@@ -244,10 +275,28 @@ export class ConcurrentEvaluator {
       case '<=': return left <= right;
       case '>': return left > right;
       case '>=': return left >= right;
+      case '&&': return left && right;
+      case '||': return left || right;
+      
       default:
         throw new Error(`Unknown binary operator: ${op}`);
     }
   }
+
+  private applyUnaryOp(op: string, value: any): any {
+    switch (op) {
+      case '-unary':
+        if (typeof value !== 'number') throw new Error(`Unary '-' requires a number`);
+        return -value;
+  
+      case '!':
+        return !value;
+  
+      default:
+        throw new Error(`Unknown unary operator: ${op}`);
+    }
+  }
+  
 
   private createThread(): ThreadContext {
     return {

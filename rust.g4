@@ -1,5 +1,6 @@
 grammar rust;
 
+
 start:
     statement+ EOF
 ;
@@ -8,7 +9,7 @@ statement:
     let_stmt ';'?
     | assign_stmt ';'?
     | return_stmt ';'?
-    | expression_stmt ';'?
+    | expression_stmt ';'
     | function_decl 
     | for_stmt  
     | loop_stmt
@@ -106,26 +107,32 @@ if_stmt:
 ;
 
 
-expression:
-    expression '==' expression   # equal
+expression
+    :'!' expression                  # logicalNot
+    | '-' expression                # unaryMinus
+    | expression '&&' expression    # logicalAnd
+    | expression '||' expression    # logicalOr
+    | expression '==' expression   # equal
     | expression '!=' expression   # notEqual
     | expression '<' expression    # lessThan
     | expression '<=' expression   # lessEqual
     | expression '>' expression    # greaterThan
     | expression '>=' expression   # greaterEqual
     | expression '*' expression   # multiply
-    | expression '/' expression # divide
     | expression '+' expression # add
     | expression '-' expression # subtract
-    | number                    # simple
-    | identifier LPAREN argument_list? RPAREN  # functionCall
-    | identifier                # variableReference
-    | block                     # blockExpr
+    | expression '/' expression # divide
+    | expression '%' expression # mod
     | LPAREN expression RPAREN  # parenExpr
+    | identifier                # variableReference
+    | number                    # simple
+    | BOOL               # boolLiteral
+    | STRING             # stringLiteral
+    | 'println!' LPAREN argument_list? RPAREN   # printlnMacro
+    | identifier LPAREN argument_list? RPAREN  # functionCall
+    | block                     # blockExpr
     | identifier '{' field_init_list? '}'  # structInit
     | expression '.' identifier              # fieldAccess
-    | STRING             # stringLiteral
-    | BOOL               # boolLiteral
     | identifier '::' identifier    # enumAccess
     | 'match' expression '{' match_arm_list '}'   # matchExpr
     | identifier '::' identifier '{' field_init_list? '}'    # enumStructInit
@@ -140,9 +147,7 @@ KW_ELSE:
 ;
 
 ty: 
-    'i32'
-    | 'u32'
-    | 'f64'
+    'number'
     | 'bool'
     | 'char'
     | 'String' 

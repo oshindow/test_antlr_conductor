@@ -67,17 +67,15 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitExpression_stmt(rustParser.Expression_stmtContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code functionDecl}
-	 * labeled alternative in {@link rustParser#function_decl}.
+	 * Enter a parse tree produced by {@link rustParser#function_decl}.
 	 * @param ctx the parse tree
 	 */
-	void enterFunctionDecl(rustParser.FunctionDeclContext ctx);
+	void enterFunction_decl(rustParser.Function_declContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code functionDecl}
-	 * labeled alternative in {@link rustParser#function_decl}.
+	 * Exit a parse tree produced by {@link rustParser#function_decl}.
 	 * @param ctx the parse tree
 	 */
-	void exitFunctionDecl(rustParser.FunctionDeclContext ctx);
+	void exitFunction_decl(rustParser.Function_declContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link rustParser#parameter_list}.
 	 * @param ctx the parse tree
@@ -159,6 +157,16 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitField_list(rustParser.Field_listContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link rustParser#field_decl}.
+	 * @param ctx the parse tree
+	 */
+	void enterField_decl(rustParser.Field_declContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link rustParser#field_decl}.
+	 * @param ctx the parse tree
+	 */
+	void exitField_decl(rustParser.Field_declContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link rustParser#field_init_list}.
 	 * @param ctx the parse tree
 	 */
@@ -168,6 +176,16 @@ public interface rustListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitField_init_list(rustParser.Field_init_listContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link rustParser#field_init}.
+	 * @param ctx the parse tree
+	 */
+	void enterField_init(rustParser.Field_initContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link rustParser#field_init}.
+	 * @param ctx the parse tree
+	 */
+	void exitField_init(rustParser.Field_initContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link rustParser#enum_decl}.
 	 * @param ctx the parse tree
@@ -189,6 +207,30 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitVariant_list(rustParser.Variant_listContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code simpleVariant}
+	 * labeled alternative in {@link rustParser#variant}.
+	 * @param ctx the parse tree
+	 */
+	void enterSimpleVariant(rustParser.SimpleVariantContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code simpleVariant}
+	 * labeled alternative in {@link rustParser#variant}.
+	 * @param ctx the parse tree
+	 */
+	void exitSimpleVariant(rustParser.SimpleVariantContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code structVariant}
+	 * labeled alternative in {@link rustParser#variant}.
+	 * @param ctx the parse tree
+	 */
+	void enterStructVariant(rustParser.StructVariantContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code structVariant}
+	 * labeled alternative in {@link rustParser#variant}.
+	 * @param ctx the parse tree
+	 */
+	void exitStructVariant(rustParser.StructVariantContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link rustParser#while_stmt}.
 	 * @param ctx the parse tree
 	 */
@@ -209,29 +251,17 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitIf_stmt(rustParser.If_stmtContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code add}
+	 * Enter a parse tree produced by the {@code enumStructInit}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterAdd(rustParser.AddContext ctx);
+	void enterEnumStructInit(rustParser.EnumStructInitContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code add}
+	 * Exit a parse tree produced by the {@code enumStructInit}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitAdd(rustParser.AddContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code subtract}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterSubtract(rustParser.SubtractContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code subtract}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitSubtract(rustParser.SubtractContext ctx);
+	void exitEnumStructInit(rustParser.EnumStructInitContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code fieldAccess}
 	 * labeled alternative in {@link rustParser#expression}.
@@ -269,18 +299,6 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitMatchExpr(rustParser.MatchExprContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code notEqual}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterNotEqual(rustParser.NotEqualContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code notEqual}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitNotEqual(rustParser.NotEqualContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code simple}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
@@ -316,6 +334,138 @@ public interface rustListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitParenExpr(rustParser.ParenExprContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code lessThan}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterLessThan(rustParser.LessThanContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code lessThan}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitLessThan(rustParser.LessThanContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code divide}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterDivide(rustParser.DivideContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code divide}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitDivide(rustParser.DivideContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code blockExpr}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterBlockExpr(rustParser.BlockExprContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code blockExpr}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitBlockExpr(rustParser.BlockExprContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code enumAccess}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterEnumAccess(rustParser.EnumAccessContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code enumAccess}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitEnumAccess(rustParser.EnumAccessContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code multiply}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterMultiply(rustParser.MultiplyContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code multiply}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitMultiply(rustParser.MultiplyContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code greaterThan}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterGreaterThan(rustParser.GreaterThanContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code greaterThan}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitGreaterThan(rustParser.GreaterThanContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code add}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterAdd(rustParser.AddContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code add}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitAdd(rustParser.AddContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code logicalNot}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterLogicalNot(rustParser.LogicalNotContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code logicalNot}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitLogicalNot(rustParser.LogicalNotContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code subtract}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubtract(rustParser.SubtractContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code subtract}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubtract(rustParser.SubtractContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code logicalAnd}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterLogicalAnd(rustParser.LogicalAndContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code logicalAnd}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitLogicalAnd(rustParser.LogicalAndContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code notEqual}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterNotEqual(rustParser.NotEqualContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code notEqual}
+	 * labeled alternative in {@link rustParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitNotEqual(rustParser.NotEqualContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code equal}
 	 * labeled alternative in {@link rustParser#expression}.
@@ -365,17 +515,17 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitFunctionCall(rustParser.FunctionCallContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code lessThan}
+	 * Enter a parse tree produced by the {@code unaryMinus}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterLessThan(rustParser.LessThanContext ctx);
+	void enterUnaryMinus(rustParser.UnaryMinusContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code lessThan}
+	 * Exit a parse tree produced by the {@code unaryMinus}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitLessThan(rustParser.LessThanContext ctx);
+	void exitUnaryMinus(rustParser.UnaryMinusContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code greaterEqual}
 	 * labeled alternative in {@link rustParser#expression}.
@@ -389,42 +539,6 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitGreaterEqual(rustParser.GreaterEqualContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code divide}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterDivide(rustParser.DivideContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code divide}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitDivide(rustParser.DivideContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code blockExpr}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterBlockExpr(rustParser.BlockExprContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code blockExpr}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitBlockExpr(rustParser.BlockExprContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code enumAccess}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterEnumAccess(rustParser.EnumAccessContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code enumAccess}
-	 * labeled alternative in {@link rustParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitEnumAccess(rustParser.EnumAccessContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code lessEqual}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
@@ -437,29 +551,29 @@ public interface rustListener extends ParseTreeListener {
 	 */
 	void exitLessEqual(rustParser.LessEqualContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code multiply}
+	 * Enter a parse tree produced by the {@code logicalOr}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterMultiply(rustParser.MultiplyContext ctx);
+	void enterLogicalOr(rustParser.LogicalOrContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code multiply}
+	 * Exit a parse tree produced by the {@code logicalOr}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitMultiply(rustParser.MultiplyContext ctx);
+	void exitLogicalOr(rustParser.LogicalOrContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code greaterThan}
+	 * Enter a parse tree produced by the {@code printlnMacro}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterGreaterThan(rustParser.GreaterThanContext ctx);
+	void enterPrintlnMacro(rustParser.PrintlnMacroContext ctx);
 	/**
-	 * Exit a parse tree produced by the {@code greaterThan}
+	 * Exit a parse tree produced by the {@code printlnMacro}
 	 * labeled alternative in {@link rustParser#expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitGreaterThan(rustParser.GreaterThanContext ctx);
+	void exitPrintlnMacro(rustParser.PrintlnMacroContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link rustParser#ty}.
 	 * @param ctx the parse tree
@@ -530,4 +644,14 @@ public interface rustListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMatch_pattern(rustParser.Match_patternContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link rustParser#pattern_list}.
+	 * @param ctx the parse tree
+	 */
+	void enterPattern_list(rustParser.Pattern_listContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link rustParser#pattern_list}.
+	 * @param ctx the parse tree
+	 */
+	void exitPattern_list(rustParser.Pattern_listContext ctx);
 }

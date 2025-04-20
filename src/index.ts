@@ -7,8 +7,101 @@ import { CompileVisitor } from "./CompilerVisitor.js";
 
 
 const input = `
-let x = 1;
-x = x + 1;
+// let x = -2;
+// x = x + true;
+
+// fn return_number() -> number {
+//     let x = 42;
+//     x = x + 1;
+//     true
+//     // return x;
+// }
+// return_number();
+
+// fn return_number() -> undefined{
+//     let x = 42;
+//     x = x + 1;
+// }
+// return_number();
+
+ 
+// fn returns_unit() {
+//     // no return
+// }
+// returns_unit();
+
+// fn returns_bool() -> bool {
+//     true
+// }
+// returns_bool();
+
+fn takes_number(x: number) -> number {
+    x + 1
+}
+ 
+
+fn takes_bool(b: bool) -> bool {
+    !b
+}
+
+// takes_bool(true);
+// fn takes_multiple(a: number, b: number) -> number {
+//     a + b
+// }
+// takes_multiple(1,2);
+
+fn inferred_type(x) -> number {
+    let result = takes_number(x);  // type checks
+    return result;
+}
+inferred_type(1);
+
+// fn block_returns() -> i32 {
+//     let x = {
+//         let a = 3;
+//         let b = 4;
+//         a + b  // value of block
+//     };
+//     x
+// }
+// fn conditional(x: i32) -> i32 {
+//     if x > 0 {
+//         x
+//     } else {
+//         -x
+//     }
+// }
+// fn wrong_conditional(x: i32) -> i32 {
+//     if x > 0 {
+//         x
+//     } else {
+//         true  //  expected i32, found bool
+//     }
+// }
+// fn empty() {
+//     // returns unit ()
+// }
+
+// fn returns_explicit_unit() -> () {
+//     ()
+// }
+// fn wrong_type(x: i32) -> bool {
+//     x  //  expected bool, found i32
+// }
+
+// fn call_wrong_type() {
+//     takes_number(true);  //  expected i32, found bool
+// }
+
+// fn nested_blocks() -> i32 {
+//     let x = 5;
+//     let y = {
+//         let x = 10; // shadowing
+//         x + 1
+//     };
+//     y
+// }
+
 `;
 
 const inputStream = CharStream.fromString(input);

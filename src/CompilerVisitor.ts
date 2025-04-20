@@ -22,15 +22,33 @@ import {
   MatchExprContext,
   ExpressionContext,
   BoolLiteralContext,
+  If_stmtContext,
+  While_stmtContext,
+  LogicalAndContext,
+  LogicalOrContext,
+  UnaryMinusContext,
+  LogicalNotContext,
+  SubtractContext,
+  GreaterEqualContext,
+  GreaterThanContext,
+  LessEqualContext,
+  LessThanContext,
+  NotEqualContext,
+  EqualContext,
+  DivideContext,
+  For_stmtContext,
+  PrintlnMacroContext
 } from "./parser/rustParser.js";
 
-import { AbstractParseTreeVisitor } from "antlr4ng";
+import { AbstractParseTreeVisitor, ParseTree } from "antlr4ng";
 import { rustVisitor } from "./parser/rustVisitor.js";
+import { isFunction } from "util";
 
 export type Instruction =
   | { tag: 'LDC'; val: any }
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
+  | { tag: 'UNARY'; sym: string }
   | { tag: 'BINOP'; sym: string }
   | { tag: 'LDF'; prms: string[]; addr: number }
   | { tag: 'CALL'; arity: number }
@@ -45,12 +63,59 @@ export type Instruction =
   | { tag: 'SPAWN' }         
   | { tag: 'YIELD' }          
   | { tag: 'JOIN' }
-  | { tag: 'GETFIELD' }; // New instruction for field access
+  | { tag: 'GETFIELD' } // New instruction for field access
+  | { tag: 'PRINT' };
+
 
 // type environment
-type Type = "i32" | "bool" | "String" | "f64";
+type Type = "number" | "bool" | "undefined" | [Type[], Type];
 
+const builtInTypes: Record<string, [Type[], Type]> = {
+    "+": [["number", "number"], "number"],
+    "-": [["number", "number"], "number"],
+    "*": [["number", "number"], "number"],
+    "/": [["number", "number"], "number"],
+    "%": [["number", "number"], "number"],
+  
+    "==": [["number", "number"], "bool"],
+    "!=": [["number", "number"], "bool"],
+    "<": [["number", "number"], "bool"],
+    ">": [["number", "number"], "bool"],
+    "<=": [["number", "number"], "bool"],
+    ">=": [["number", "number"], "bool"],
+  
+    "&&": [["bool", "bool"], "bool"],
+    "||": [["bool", "bool"], "bool"],
+    "!": [["bool"], "bool"],
+    "-unary": [["number"], "number"],
+  };
+  
+  
 type TypeEnv = Record<string, Type>[];
+
+// function equalType(t1: Type, t2: Type[]): boolean {
+//     return JSON.stringify(t1) === JSON.stringify(t2);
+//   }
+  
+function equalTypes(ts1: Type[], ts2: Type[]): boolean {
+    return JSON.stringify(ts1) === JSON.stringify(ts2);
+  }
+
+function extendTypeEnv(vars: string[], types: Type[], env: TypeEnv): TypeEnv {
+    if (vars.length !== types.length) {
+      throw new Error(
+        vars.length > types.length
+          ? "too few parameters in function declaration"
+          : "too many parameters in function declaration"
+      );
+    }
+  
+    const frame: Record<string, Type> = {};
+    for (let i = 0; i < vars.length; i++) {
+      frame[vars[i]] = types[i];
+    }
+    return [frame, ...env];
+  }
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -65,8 +130,15 @@ export class CompileVisitor
       const val = Number(ctx.number().NUMBER().getText());
       this.instrs.push({ tag: "LDC", val });
   }
+  visitBoolLiteral(ctx: BoolLiteralContext): void {
+      const val = ctx.BOOL().getText() === "true";
+      this.instrs.push({ tag: "LDC", val });
+      
+  }
 
   visitMultiply(ctx: MultiplyContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
       this.visit(ctx.expression(0));
       this.visit(ctx.expression(1));
       const op = ctx.getChild(1).getText();
@@ -74,34 +146,157 @@ export class CompileVisitor
   }
 
   visitAdd(ctx: AddContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+      
       this.visit(ctx.expression(0));
       this.visit(ctx.expression(1));
       const op = ctx.getChild(1).getText();
       this.instrs.push({ tag: "BINOP", sym: op });
   }
 
+  visitSubtract(ctx: SubtractContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));  // Left operand
+    this.visit(ctx.expression(1));  // Right operand
+    this.instrs.push({ tag: 'BINOP', sym: '-' });
+ }
+
+ visitDivide(ctx: DivideContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '/' });
+}
+
+visitMod(ctx: DivideContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0)); 
+    this.visit(ctx.expression(1)); 
+    this.instrs.push({ tag: 'BINOP', sym: '%' });
+}
+
+visitEqual(ctx: EqualContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '==' });
+}
+
+visitNotEqual(ctx: NotEqualContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '!=' });
+}
+
+visitLessThan(ctx: LessThanContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '<' });
+}
+
+visitLessEqual(ctx: LessEqualContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '<=' });
+}
+
+visitGreaterThan(ctx: GreaterThanContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '>' });
+}
+
+visitGreaterEqual(ctx: GreaterEqualContext): void {
+    const type = this.inferType(ctx, this.typeEnv);
+      
+    this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
+    this.instrs.push({ tag: 'BINOP', sym: '>=' });
+}
 
   visitFunctionDecl(ctx: Function_declContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
       const params = ctx.parameter_list()
           ? ctx.parameter_list().parameter().map(p => p.identifier().IDENTIFIER().getText())
           : [];
-
       const body = ctx.block();
+      
+      // check function declaration errors: number of params mismatch | return type mismatch
+      const paramTypes: Type[] = ctx.parameter_list()
+        ? ctx.parameter_list().parameter().map(p => {
+            const t = p.ty()?.getText();
+            if (t !== "number" && t !== "bool") throw new Error(`Unsupported param type: ${t}`);
+            return t as Type;
+            })
+        : [];
+        
+        const returnType: Type = ctx.ty() ? ctx.ty().getText() as Type : "undefined";
+
+        console.log("paramTypes", paramTypes, "returnType", returnType, "params", params, name) 
+        this.assignType(this.typeEnv, name, [paramTypes, returnType]);
+
+        
+        const extendedEnv = extendTypeEnv(params, paramTypes, this.typeEnv);
+        console.log("extendedEnv", extendedEnv)
+        let bodyRetType = this.inferFunctionBodyType(ctx.block(), extendedEnv);
+        if (!bodyRetType) {
+            bodyRetType = "undefined";
+        }
+        // console.log("bodyRetType", bodyRetType, returnType)
+        if (bodyRetType !== returnType) {
+            throw new Error(`Type error in function '${name}'; declared return type ${returnType}, actual return type ${bodyRetType}`);
+        }
+
+        // end of type checking
+        
+      
       const funcAddr = this.instrs.length + 2
 
       this.instrs.push({ tag: 'LDF', prms: params, addr: funcAddr });
 
       const gotoPlaceholder: Instruction = { tag: 'GOTO', addr: -1 };
       this.instrs.push(gotoPlaceholder);
-
-      this.visit(body);
-
+      
+      // restore the current type environment
+        // and extend it with the function parameters
+      const prevEnv = this.typeEnv;
+      this.typeEnv = extendedEnv;
+      this.visitFunBlock(body);
+      this.typeEnv = prevEnv;
       gotoPlaceholder.addr = this.instrs.length;
       this.instrs.push({ tag: 'ASSIGN', sym: name });
   }
 
+  visitPrintlnMacro(ctx: PrintlnMacroContext): void {
+    const args = ctx.argument_list()?.expression() ?? [];
+
+    for (const expr of args) {
+        this.visit(expr); // Push values to stack
+    }
+
+    // You could also support printing multiple values
+    for (let i = 0; i < args.length; i++) {
+        this.instrs.push({ tag: 'PRINT' });
+    }
+
+    this.instrs.push({ tag: 'POP' }); // Clean up last expression result if needed
+ }
+
+
   visitFunctionCall(ctx: FunctionCallContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
       const name = ctx.identifier().IDENTIFIER().getText();
       const args = ctx.argument_list()?.expression() ?? [];
       // Special case: spawn(f)
@@ -128,6 +323,7 @@ export class CompileVisitor
       const statements = ctx.statement();
       const expr = ctx.expression();
       const localVars: string[] = [];
+    //   console.log("statements", statements)
 
       for (const stmt of statements) {
           const letStmt = stmt.let_stmt?.();
@@ -145,16 +341,52 @@ export class CompileVisitor
               this.instrs.push({ tag: 'POP' });
           }
       }
-
+    //   console.log("expr", expr)
       if (expr) {
           this.visit(expr);
-      } else {
+           
+      }   else {
           this.instrs.push({ tag: 'LDC', val: undefined });
       }
 
       this.instrs.push({ tag: 'EXIT_SCOPE' });
   }
 
+  visitFunBlock(ctx: BlockContext): void {
+    const statements = ctx.statement();
+    const expr = ctx.expression();
+    const localVars: string[] = [];
+  //   console.log("statements", statements)
+
+    for (const stmt of statements) {
+        const letStmt = stmt.let_stmt?.();
+        if (letStmt) {
+            const name = letStmt.identifier().IDENTIFIER().getText();
+            localVars.push(name);
+        }
+    }
+
+    this.instrs.push({ tag: 'ENTER_SCOPE', syms: localVars });
+
+    for (const stmt of statements) {
+        this.visit(stmt);
+        if (!stmt.return_stmt()) {
+            this.instrs.push({ tag: 'POP' });
+        }
+    }
+  //   console.log("expr", expr)
+    if (expr) {
+        this.visit(expr);
+         
+        this.instrs.push({ tag: 'RESET' });
+        
+    }  else {
+        this.instrs.push({ tag: 'LDC', val: undefined });
+        this.instrs.push({ tag: 'RESET' });
+    }
+
+    this.instrs.push({ tag: 'EXIT_SCOPE' });
+}
 //   visitLet_stmt(ctx: Let_stmtContext): void {
 //       const name = ctx.identifier().IDENTIFIER().getText();
 //       if (ctx.expression()) {
@@ -174,7 +406,7 @@ visitLet_stmt(ctx: Let_stmtContext): void {
     }
 
     if (ctx.expression()) {
-        const inferredType = this.inferType(ctx.expression());
+        const inferredType = this.inferType(ctx.expression(), this.typeEnv);
         if (declaredType && declaredType !== inferredType) {
             throw new Error(`Type mismatch in let: expected ${declaredType}, got ${inferredType}`);
         }
@@ -212,7 +444,11 @@ visitLet_stmt(ctx: Let_stmtContext): void {
           this.visitFunctionDecl(ctx.function_decl()!);
       } else if (ctx.block()) {
           this.visitBlock(ctx.block()!);
-      }
+      } else if (ctx.if_stmt()) {
+        this.visitIfExpr(ctx.if_stmt());
+      } else if (ctx.while_stmt()) {
+        this.visitWhileExpr(ctx.while_stmt()!);
+    }
   }
 
   visitVariableReference(ctx: VariableReferenceContext): void {
@@ -278,30 +514,275 @@ visitLet_stmt(ctx: Let_stmtContext): void {
     env[0][sym] = ty;
   }
 
-  inferType(expr: ExpressionContext): Type {
+  inferType(expr: ExpressionContext, env: TypeEnv): Type {
     if (expr instanceof SimpleContext) {
-        return "i32";
+      return "number";
     }
+  
     if (expr instanceof BoolLiteralContext) {
-        return "bool";
+      return "bool";
     }
+  
     if (expr instanceof VariableReferenceContext) {
-        const name = expr.identifier().IDENTIFIER().getText();
-        return this.lookupType(this.typeEnv, name);
+      const name = expr.identifier().IDENTIFIER().getText();
+      console.log("type env", env, name)
+      return this.lookupType(env, name);
     }
-    if (expr instanceof AddContext || expr instanceof MultiplyContext) {
-        const left = this.inferType(expr.expression(0));
-        const right = this.inferType(expr.expression(1));
-        if (left === "i32" && right === "i32") return "i32";
-        throw new Error(`Operator +/* requires two i32, got ${left}, ${right}`);
-    }
+  
+    const bin = (op: string, left: ExpressionContext, right: ExpressionContext): Type => {
+      const sig = builtInTypes[op];
+      if (!sig) throw new Error(`Unknown operator ${op}`);
+      const [expectedArgs, returnType] = sig;
+      const leftType = this.inferType(left, env);
+      const rightType = this.inferType(right, env);
+    //   console.log("leftType", leftType, rightType, expectedArgs)
+      if (!equalTypes([leftType, rightType], expectedArgs)) {
+        throw new Error(`Operator ${op} expects ${expectedArgs.join(", ")}, got ${leftType}, ${rightType}`);
+      }
+      return returnType;
+     
+    };
+  
+    const un = (op: string, operand: ExpressionContext): Type => {
+      const sig = builtInTypes[op];
+      if (!sig) throw new Error(`Unknown operator ${op}`);
+      const [expectedArgs, returnType] = sig;
+      const argType = this.inferType(operand, env);
+    //   console.log("leftType", expectedArgs)
+      if (!equalTypes([argType], expectedArgs)) {
+        throw new Error(`Operator ${op} expects ${expectedArgs}, got ${argType}`);
+      }
+      return returnType;
+    };
+  
+    if (expr instanceof AddContext) return bin("+", expr.expression(0), expr.expression(1));
+    if (expr instanceof SubtractContext) return bin("-", expr.expression(0), expr.expression(1));
+    if (expr instanceof MultiplyContext) return bin("*", expr.expression(0), expr.expression(1));
+    if (expr instanceof DivideContext) return bin("/", expr.expression(0), expr.expression(1));
+    if (expr instanceof EqualContext) return bin("==", expr.expression(0), expr.expression(1));
+    if (expr instanceof NotEqualContext) return bin("!=", expr.expression(0), expr.expression(1));
+    if (expr instanceof LessThanContext) return bin("<", expr.expression(0), expr.expression(1));
+    if (expr instanceof GreaterThanContext) return bin(">", expr.expression(0), expr.expression(1));
+    if (expr instanceof LessEqualContext) return bin("<=", expr.expression(0), expr.expression(1));
+    if (expr instanceof GreaterEqualContext) return bin(">=", expr.expression(0), expr.expression(1));
+    if (expr instanceof LogicalAndContext) return bin("&&", expr.expression(0), expr.expression(1));
+    if (expr instanceof LogicalOrContext) return bin("||", expr.expression(0), expr.expression(1));
+    if (expr instanceof LogicalNotContext) return un("!", expr.expression());
+    if (expr instanceof UnaryMinusContext) return un("-unary", expr.expression());
+
     if (expr instanceof FunctionCallContext) {
-        // optional: add function type annotation for lookup
-        return "i32"; // or use function return type table
+      const name = expr.identifier().IDENTIFIER().getText();
+      console.log("name", name)
+      const funType = builtInTypes[name] ?? this.lookupType(env, name);
+      console.log("funType", funType)
+      if (!Array.isArray(funType)) throw new Error(`${name} is not callable`);
+    //   console.log("")
+      const [expectedArgs, returnType] = funType;
+      const actualArgTypes = (expr.argument_list()?.expression() ?? []).map(e => this.inferType(e, env));
+      console.log("actualArgTypes", actualArgTypes, expectedArgs)
+      if (actualArgTypes.length !== expectedArgs.length) {
+        throw new Error(`Function application error: ${name} expects ${expectedArgs.length} argument(s), got ${actualArgTypes.length}`);
+      }
+      
+      if (!equalTypes(actualArgTypes, expectedArgs)) {
+        throw new Error(`Function ${name} expects (${expectedArgs.join(", ")}), got (${actualArgTypes.join(", ")})`);
+      }
+      return returnType;
     }
-    // TODO: support other types
-    throw new Error("Unsupported expression in type inference");
+    
+    if (expr instanceof If_stmtContext) {
+        const condType = this.inferType(expr.expression(), env);
+        if (condType !== "bool") {
+          throw new Error(`Expected predicate type: bool, actual predicate type: ${condType}`);
+        }
+      
+        const thenType = this.inferType(expr.block(0), env);
+        let elseType: Type = "undefined";
+        if (expr.block().length > 1) {
+          elseType = this.inferType(expr.block(1), env);
+        }
+      
+        if (!equalTypes([thenType], [elseType])) {
+          throw new Error(`Types of branches not matching; consequent type: ${thenType}, alternative type: ${elseType}`);
+        }
+      
+        return thenType;
+      }
+      
+      
+
+    throw new Error(`Unsupported expression type: ${expr.constructor.name}`);
+      
+  }
+  inferFunctionBodyType(body: BlockContext, env: TypeEnv): Type {
+    const statements = body.statement();
+    const returnTypes: Type[] = [];
+  
+    for (const stmt of statements) {
+        // console.log("stmt", stmt)
+        const letStmt = stmt.let_stmt?.();
+        if (letStmt) {
+          const name = letStmt.identifier().IDENTIFIER().getText();
+          let inferred: Type;
+      
+          if (letStmt.ty()) {
+            inferred = letStmt.ty().getText() as Type;
+          } else if (letStmt.expression()) {
+            inferred = this.inferType(letStmt.expression(), env);
+          } else {
+            throw new Error(`Cannot infer type for variable '${name}'`);
+          }
+      
+          this.assignType(env, name, inferred);
+        }
+
+      const ret = stmt.return_stmt?.();
+      if (ret) {
+        const retExpr = ret.expression();
+        returnTypes.push(this.inferType(retExpr, env));
+        break; // exit loop on first return
+      }
     }
+  
+    if (returnTypes.length === 0) {
+      const trailingExpr = body.expression();
+    //   console.log("trailingExpr", trailingExpr)
+      if (trailingExpr) {
+        // const expr = trailingExpr.expression();
+        // console.log("")
+        returnTypes.push(this.inferType(trailingExpr, env));
+        console.log("returnTypes", returnTypes, env)
+     //   return trailingExpr ? this.inferType(trailingExpr, env) : "undefined";
+        }
+    }
+  
+    // Check all return types are consistent
+    const first = returnTypes[0];
+    for (const t of returnTypes) {
+      if (t !== first) {
+        throw new Error(`return type mismatch in function body`);
+      }
+    }
+    console.log("first", first)
+    return first;
+  }
+  
 
   
+    visitIfExpr(ctx: If_stmtContext): void {
+        this.visit(ctx.expression());
+        
+        // Check the types of the branches
+
+        const thenType = this.inferType(ctx.block(0), this.typeEnv);
+        const elseType = ctx.block().length > 1
+        ? this.inferType(ctx.block(1), this.typeEnv)
+        : "undefined";
+
+        if (thenType !== elseType) {
+        throw new Error(`Type mismatch in if branches: then -> ${thenType}, else -> ${elseType}`);
+        }
+        // end of type checking
+
+        // Emit a JOF (jump on false) with placeholder
+        const jofInstr: Instruction = { tag: 'JOF', addr: -1 };
+        this.instrs.push(jofInstr);
+        
+
+        // Compile the 'then' block
+        this.visit(ctx.block(0));
+
+        const gotoAfterThen: Instruction = { tag: 'GOTO', addr: -1 };
+        this.instrs.push(gotoAfterThen);
+
+        // Fix the JOF to jump here if condition is false
+        jofInstr.addr = this.instrs.length;
+
+        if (ctx.block().length > 1) {
+            this.visit(ctx.block(1));
+        } else {
+            // If there's no else, push undefined as result
+            this.instrs.push({ tag: 'LDC', val: undefined });
+        }
+        // Fix the GOTO to skip over else
+        gotoAfterThen.addr = this.instrs.length;
+
+    }
+
+    visitWhileExpr(ctx: While_stmtContext): void {
+        const startAddr = this.instrs.length;
+    
+        // Compile the condition
+        this.visit(ctx.expression());
+    
+        // Insert conditional jump (JOF) with placeholder
+        const jofInstr: Instruction = { tag: 'JOF', addr: -1 };
+        this.instrs.push(jofInstr);
+    
+        // Compile the body
+        this.visit(ctx.block());
+    
+        // Jump back to the start to re-evaluate the condition
+        this.instrs.push({ tag: 'GOTO', addr: startAddr });
+    
+        // Update JOF to jump past the loop if condition fails
+        jofInstr.addr = this.instrs.length;
+    }
+
+    visitForExpr(ctx: For_stmtContext): void {
+        this.visit(ctx.expression(0));  
+
+        const loopStart = this.instrs.length;
+    
+        // Visit the condition (guard)
+        this.visit(ctx.expression(1));  
+        const conditionAddr = this.instrs.length;  
+    
+        this.instrs.push({ tag: 'JOF', addr: -1 });
+    
+        // Visit the body (statements inside the loop)
+        this.visit(ctx.block());  // Visit the loop's body statements
+    
+        // Visit the update (increment, decrement, or modification)
+        this.visit(ctx.expression(2));  // The third expression is the update, e.g., `i = i + 1`
+    
+        // Jump back to the condition to check again
+        this.instrs.push({ tag: 'GOTO', addr: loopStart });
+
+        const condJumpInstr = this.instrs[conditionAddr];
+        if (condJumpInstr.tag === 'JOF') {
+            condJumpInstr.addr = this.instrs.length;
+        } else {
+            throw new Error('Expected JOF instruction at condition jump address');
+        }
+        
+    }
+       
+    
+    visitLogicalAnd(ctx: LogicalAndContext): void {
+        const type = this.inferType(ctx, this.typeEnv);
+        this.visit(ctx.expression(0));
+        this.visit(ctx.expression(1));
+        this.instrs.push({ tag: "BINOP", sym: "&&" });
+    }
+    
+    visitLogicalOr(ctx: LogicalOrContext): void {
+        const type = this.inferType(ctx, this.typeEnv);
+        this.visit(ctx.expression(0));
+        this.visit(ctx.expression(1));
+        this.instrs.push({ tag: "BINOP", sym: "||" });
+    }
+    
+    visitUnaryMinus(ctx: UnaryMinusContext): void {
+        const type = this.inferType(ctx, this.typeEnv);
+        this.visit(ctx.expression());
+        this.instrs.push({ tag: "UNARY", sym: "-unary" });
+    }
+    
+    visitLogicalNot(ctx: LogicalNotContext): void {
+        const type = this.inferType(ctx, this.typeEnv);
+        this.visit(ctx.expression());
+        this.instrs.push({ tag: "UNARY", sym: "!" });
+    }
+    
 }
