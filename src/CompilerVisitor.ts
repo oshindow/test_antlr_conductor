@@ -42,7 +42,7 @@ import {
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
 import { rustVisitor } from "./parser/rustVisitor.js";
-import { TypeChecker, Type, TypeEnv, extendTypeEnv, builtInTypes, equalTypes } from "./TypeChecker";
+import { TypeChecker, Type, TypeEnv, extendTypeEnv, FnType} from "./TypeChecker.js";
 
 const typeChecker = new TypeChecker();
 
@@ -177,58 +177,68 @@ visitGreaterEqual(ctx: GreaterEqualContext): void {
     this.instrs.push({ tag: 'BINOP', sym: '>=' });
 }
 
-  visitFunctionDecl(ctx: Function_declContext): void {
-      const name = ctx.identifier().IDENTIFIER().getText();
-      const params = ctx.parameter_list()
-          ? ctx.parameter_list().parameter().map(p => p.identifier().IDENTIFIER().getText())
-          : [];
-      const body = ctx.block();
-      
-      // check function declaration errors: number of params mismatch | return type mismatch
-      const paramTypes: Type[] = ctx.parameter_list()
-        ? ctx.parameter_list().parameter().map(p => {
-            const t = p.ty()?.getText();
-            if (t !== "number" && t !== "bool") throw new Error(`Unsupported param type: ${t}`);
-            return t as Type;
-            })
-        : [];
-        
-        const returnType: Type = ctx.ty() ? ctx.ty().getText() as Type : "undefined";
+visitFunctionDecl(ctx: Function_declContext): void {
+  const name = ctx.identifier().IDENTIFIER().getText();
+  const params = ctx.parameter_list()
+      ? ctx.parameter_list().parameter().map(p => p.identifier().IDENTIFIER().getText())
+      : [];
+  const body = ctx.block();
 
-        console.log("paramTypes", paramTypes, "returnType", returnType, "params", params, name) 
-        this.assignType(this.typeEnv, name, [paramTypes, returnType]);
+  // Infer parameter types and validate them
+  const paramTypes: Type[] = ctx.parameter_list()
+      ? ctx.parameter_list().parameter().map(p => {
+          const t = p.ty()?.getText();
+          if (t !== "number" && t !== "bool") {
+              throw new Error(`Unsupported param type: ${t}`);
+          }
+          return t as Type;
+      })
+      : [];
 
-        
-        const extendedEnv = extendTypeEnv(params, paramTypes, this.typeEnv);
-        console.log("extendedEnv", extendedEnv)
-        let bodyRetType = this.inferFunctionBodyType(ctx.block(), extendedEnv);
-        if (!bodyRetType) {
-            bodyRetType = "undefined";
-        }
-        // console.log("bodyRetType", bodyRetType, returnType)
-        if (bodyRetType !== returnType) {
-            throw new Error(`Type error in function '${name}'; declared return type ${returnType}, actual return type ${bodyRetType}`);
-        }
+  // Get the return type or default to "undefined"
+  const returnType: Type = ctx.ty() ? ctx.ty().getText() as Type : "undefined";
 
-        // end of type checking
-        
-      
-      const funcAddr = this.instrs.length + 2
+  const fnType: FnType = {
+      kind: "fn",
+      params: paramTypes,
+      return: returnType
+  };
 
-      this.instrs.push({ tag: 'LDF', prms: params, addr: funcAddr });
+  //console.log("FnType:", fnType, "params:", params, "name:", name);
 
-      const gotoPlaceholder: Instruction = { tag: 'GOTO', addr: -1 };
-      this.instrs.push(gotoPlaceholder);
-      
-      // restore the current type environment
-        // and extend it with the function parameters
-      const prevEnv = this.typeEnv;
-      this.typeEnv = extendedEnv;
-      this.visitFunBlock(body);
-      this.typeEnv = prevEnv;
-      gotoPlaceholder.addr = this.instrs.length;
-      this.instrs.push({ tag: 'ASSIGN', sym: name });
+  this.assignType(this.typeEnv, name, fnType);
+
+  // Extend type environment with parameter bindings
+  const extendedEnv = extendTypeEnv(params, paramTypes, this.typeEnv);
+  //console.log("extendedEnv:", extendedEnv);
+
+  // Infer function body return type and compare
+  let bodyRetType = this.inferFunctionBodyType(body, extendedEnv);
+  if (!bodyRetType) {
+      bodyRetType = "undefined";
   }
+
+  if (bodyRetType !== returnType) {
+      throw new Error(`Type error in function '${name}'; declared return type ${returnType}, actual return type ${bodyRetType}`);
+  }
+
+  // Code generation
+  const funcAddr = this.instrs.length + 2;
+  this.instrs.push({ tag: 'LDF', prms: params, addr: funcAddr });
+
+  const gotoPlaceholder: Instruction = { tag: 'GOTO', addr: -1 };
+  this.instrs.push(gotoPlaceholder);
+
+  // Save and restore type environment around visiting function body
+  const prevEnv = this.typeEnv;
+  this.typeEnv = extendedEnv;
+  this.visitFunBlock(body);
+  this.typeEnv = prevEnv;
+
+  gotoPlaceholder.addr = this.instrs.length;
+  this.instrs.push({ tag: 'ASSIGN', sym: name });
+}
+
 
   visitPrintlnMacro(ctx: PrintlnMacroContext): void {
     const args = ctx.argument_list()?.expression() ?? [];

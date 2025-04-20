@@ -389,6 +389,7 @@ export class TypeChecker {
     if (expr.constructor.name === "FunctionCallContext") {
       const name = expr.identifier().IDENTIFIER().getText();
       const fnType = builtInTypes[name] || this.lookupType(env, name);
+      console.log("fnType:", fnType);
       
       if (!isFnType(fnType)) {
         throw new Error(`${name} is not callable`);

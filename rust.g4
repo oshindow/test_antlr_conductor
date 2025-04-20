@@ -110,6 +110,8 @@ if_stmt:
 expression
     :'!' expression                  # logicalNot
     | '-' expression                # unaryMinus
+    | '&' expression                         # refExpr
+    | '&' MUT expression                     # refMutExpr
     | expression '&&' expression    # logicalAnd
     | expression '||' expression    # logicalOr
     | expression '==' expression   # equal

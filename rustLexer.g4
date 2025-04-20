@@ -27,6 +27,7 @@ KW_TRY: 'try';
 KW_I32 : 'i32';
 KW_BOOL : 'bool';
 
+AMP     : '&';
 PLUS    : '+';
 MINUS   : '-';
 STAR    : '*';
