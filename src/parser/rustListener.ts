@@ -36,6 +36,7 @@ import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
 import { LessThanContext } from "./rustParser.js";
+import { RefMutExprContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
 import { EnumAccessContext } from "./rustParser.js";
@@ -49,6 +50,7 @@ import { NotEqualContext } from "./rustParser.js";
 import { EqualContext } from "./rustParser.js";
 import { StructInitContext } from "./rustParser.js";
 import { StringLiteralContext } from "./rustParser.js";
+import { RefExprContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
 import { UnaryMinusContext } from "./rustParser.js";
 import { GreaterEqualContext } from "./rustParser.js";
@@ -423,6 +425,18 @@ export class rustListener implements ParseTreeListener {
      */
     exitLessThan?: (ctx: LessThanContext) => void;
     /**
+     * Enter a parse tree produced by the `refMutExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterRefMutExpr?: (ctx: RefMutExprContext) => void;
+    /**
+     * Exit a parse tree produced by the `refMutExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitRefMutExpr?: (ctx: RefMutExprContext) => void;
+    /**
      * Enter a parse tree produced by the `divide`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -578,6 +592,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitStringLiteral?: (ctx: StringLiteralContext) => void;
+    /**
+     * Enter a parse tree produced by the `refExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterRefExpr?: (ctx: RefExprContext) => void;
+    /**
+     * Exit a parse tree produced by the `refExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitRefExpr?: (ctx: RefExprContext) => void;
     /**
      * Enter a parse tree produced by the `functionCall`
      * labeled alternative in `rustParser.expression`.

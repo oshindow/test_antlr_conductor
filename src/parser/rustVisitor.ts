@@ -36,6 +36,7 @@ import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
 import { LessThanContext } from "./rustParser.js";
+import { RefMutExprContext } from "./rustParser.js";
 import { DivideContext } from "./rustParser.js";
 import { BlockExprContext } from "./rustParser.js";
 import { EnumAccessContext } from "./rustParser.js";
@@ -49,6 +50,7 @@ import { NotEqualContext } from "./rustParser.js";
 import { EqualContext } from "./rustParser.js";
 import { StructInitContext } from "./rustParser.js";
 import { StringLiteralContext } from "./rustParser.js";
+import { RefExprContext } from "./rustParser.js";
 import { FunctionCallContext } from "./rustParser.js";
 import { UnaryMinusContext } from "./rustParser.js";
 import { GreaterEqualContext } from "./rustParser.js";
@@ -283,6 +285,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitLessThan?: (ctx: LessThanContext) => Result;
     /**
+     * Visit a parse tree produced by the `refMutExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitRefMutExpr?: (ctx: RefMutExprContext) => Result;
+    /**
      * Visit a parse tree produced by the `divide`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -373,6 +382,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitStringLiteral?: (ctx: StringLiteralContext) => Result;
+    /**
+     * Visit a parse tree produced by the `refExpr`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitRefExpr?: (ctx: RefExprContext) => Result;
     /**
      * Visit a parse tree produced by the `functionCall`
      * labeled alternative in `rustParser.expression`.
