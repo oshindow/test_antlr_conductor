@@ -137,11 +137,31 @@ const input = `
 
 // println!("Hello, world!"); // should print "Hello, world!"
 
-let mut x = 0;
-for i in 0..5 {
-   x = i;
-} 
-x;
+// let mut x = 0;
+// for i in 0..5 {
+//    x = i;
+// } 
+// x;
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+struct Rectangle {
+    top_left: Point,
+    width: i32,
+    height: i32,
+}
+
+let c = Color::Red; // Correct type annotation
+c; // Accessing field of struct
 `;
 
 const inputStream = CharStream.fromString(input);

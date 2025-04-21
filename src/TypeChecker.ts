@@ -1,9 +1,25 @@
 // Type definitions with extensions for ownership
+interface EnumType {
+    kind: 'enum';
+    name: string;
+    variants: {
+        [variant: string]: Type | null; // null for variants without data
+    };
+}
+  
+interface StructType {
+    kind: 'struct';
+    name: string;
+    fields: {
+        [field: string]: Type;
+    };
+}
+
 export type BaseType = "number" | "bool" | "undefined" | "string" | "void" | "i32" | "i64" | "f32" | "f64" | "char" | "u8" | "u16" | "u32" | "u64";
 export type RefType = { kind: "ref", mutable: boolean, base: Type, lifetime: string };
 export type FnType = { kind: "fn", params: Type[], return: Type };
 type ArrayType = { kind: "array", element: Type };
-export type Type = BaseType | RefType | FnType | [Type[], Type] | ArrayType;
+export type Type = BaseType | RefType | FnType | ArrayType | EnumType | StructType | string;
 
 export type TypeEnv = Record<string, TypeState>[];
 
@@ -50,6 +66,18 @@ export function equalTypes(ts1: Type[], ts2: Type[]): boolean {
 
 export function isBaseType(type: Type): type is BaseType {
   return typeof type === "string";
+}
+
+function isEnumType(type: Type): type is EnumType {
+    return typeof type === 'object' && type !== null && (type as any).kind === 'enum';
+  }
+  
+function isStructType(type: Type): type is StructType {
+    return typeof type === 'object' && type !== null && (type as any).kind === 'struct';
+}
+
+function isCompositeType(type: Type): boolean {
+    return isEnumType(type) || isStructType(type);
 }
 
 export function isRefType(type: Type): type is RefType {
@@ -132,7 +160,7 @@ export class TypeChecker {
     for (const frame of env) {
       if (sym in frame) return frame[sym];
     }
-    throw new Error(`Unbound variable: ${sym}`);
+    throw new Error(`Unbound variable state: ${sym}`);
   }
   
   lookupType(env: TypeEnv, sym: string): Type {
@@ -284,6 +312,109 @@ export class TypeChecker {
       base: baseType,
       lifetime
     };
+  }
+
+  // Create a new enum type
+  createEnumType(name: string, variants: {[variant: string]: Type | null}): EnumType {
+    return {
+      kind: 'enum',
+      name,
+      variants
+    };
+  }
+
+  // Create a new struct type
+  createStructType(name: string, fields: {[field: string]: Type}): StructType {
+    return {
+      kind: 'struct',
+      name,
+      fields
+    };
+  }
+
+  // Register an enum definition in the environment
+  registerEnum(env: TypeEnv, enumCtx: any): void {
+    const name = enumCtx.identifier().IDENTIFIER().getText();
+    const variants: {[variant: string]: Type | null} = {};
+    
+    // Process each variant
+    const variantCtxs = enumCtx.enum_variant();
+    for (const variantCtx of variantCtxs) {
+      const variantName = variantCtx.identifier().IDENTIFIER().getText();
+      
+      // Check for duplicate variant names
+      if (variants[variantName]) {
+        throw new Error(`Duplicate variant name ${variantName} in enum ${name}`);
+      }
+      
+      // Handle variants with data
+      if (variantCtx.ty()) {
+        variants[variantName] = this.parseTypeAnnotation(variantCtx.ty(), env);
+      } else {
+        variants[variantName] = null; // Simple variant without data
+      }
+    }
+    
+    const enumType = this.createEnumType(name, variants);
+    this.assignType(env, name, enumType);
+  }
+
+  // Register a struct definition in the environment
+  registerStruct(env: TypeEnv, structCtx: any): void {
+    const name = structCtx.identifier().IDENTIFIER().getText();
+    const fields: {[field: string]: Type} = {};
+    
+    // Process each field
+    const fieldCtxs = structCtx.struct_field();
+    for (const fieldCtx of fieldCtxs) {
+      const fieldName = fieldCtx.identifier().IDENTIFIER().getText();
+      
+      // Check for duplicate field names
+      if (fields[fieldName]) {
+        throw new Error(`Duplicate field name ${fieldName} in struct ${name}`);
+      }
+      
+      const fieldType = this.parseTypeAnnotation(fieldCtx.ty(), env);
+      fields[fieldName] = fieldType;
+    }
+    
+    const structType = this.createStructType(name, fields);
+    this.assignType(env, name, structType);
+  }
+
+  parseTypeAnnotation(tyCtx: any, env: TypeEnv): Type {
+    const typeText = tyCtx.getText();
+    
+    // Handle reference types
+    if (typeText.startsWith("&")) {
+      const isMut = typeText.startsWith("&mut ");
+      const baseTypeText = typeText.substring(isMut ? 5 : 1);
+      const baseType = this.parseTypeAnnotation({ getText: () => baseTypeText }, env);
+      return this.createRefType(baseType, isMut);
+    }
+    
+    // Handle array types
+    if (typeText.endsWith("]")) {
+      const match = typeText.match(/^([^\[]+)\[/);
+      if (match) {
+        const elementTypeText = match[1];
+        const elementType = this.parseTypeAnnotation({ getText: () => elementTypeText }, env);
+        return { kind: 'array', element: elementType };
+      }
+    }
+    
+    // Handle named types (could be enum, struct, or primitive)
+    const type = this.lookupType(env, typeText);
+    if (type) {
+      return type;
+    }
+    
+    // If not found, assume it's a primitive type
+    if (["number", "bool", "string", "undefined"].includes(typeText)) {
+      return typeText as BaseType;
+    }
+    
+    throw new Error(`Unknown type: ${typeText}`);
   }
 
   inferType(expr: any, env: TypeEnv): Type {
@@ -446,6 +577,200 @@ export class TypeChecker {
         return "undefined"; // `for` loops do not return a value
     }
 
+    
+    // Handle struct literals
+    if (expr.constructor.name === "StructInitContext") {
+        const typeName = expr.identifier().IDENTIFIER().getText();
+        const structType = this.lookupType(env, typeName);
+    
+        if (!isStructType(structType)) {
+        throw new Error(`${typeName} is not a struct`);
+        }
+    
+        const initializedFields = new Set<string>();
+    
+        for (const field of expr.struct_field_init()) {
+        const fieldName = field.identifier().IDENTIFIER().getText();
+        const expectedType = structType.fields[fieldName];
+    
+        if (!expectedType) {
+            throw new Error(`Field ${fieldName} does not exist in struct ${typeName}`);
+        }
+        if (initializedFields.has(fieldName)) {
+            throw new Error(`Duplicate initialization of field ${fieldName}`);
+        }
+        initializedFields.add(fieldName);
+    
+        const fieldExpr = field.expression();
+        const actualType = this.inferType(fieldExpr, env);
+    
+        if (JSON.stringify(expectedType) !== JSON.stringify(actualType)) {
+            throw new Error(`Type mismatch in field ${fieldName}: expected ${JSON.stringify(expectedType)}, got ${JSON.stringify(actualType)}`);
+        }
+    
+        if (expr.constructor.name === "VariableReferenceContext" && !isBaseType(actualType) && !isRefType(actualType)) {
+            const varName = fieldExpr.identifier().IDENTIFIER().getText();
+            this.moveValue(env, varName);
+        }
+        }
+    
+        for (const fieldName in structType.fields) {
+        if (!initializedFields.has(fieldName)) {
+            throw new Error(`Field ${fieldName} is not initialized in struct ${typeName}`);
+        }
+        }
+    
+        return structType;
+    }
+    
+    // Handle enum variant instantiation
+    if (expr.constructor.name === "EnumStructInitContext") {
+        const enumName = expr.identifier(0).IDENTIFIER().getText();
+        const variantName = expr.identifier(1).IDENTIFIER().getText();
+    
+        const enumType = this.lookupType(env, enumName);
+        if (!isEnumType(enumType)) {
+        throw new Error(`${enumName} is not an enum`);
+        }
+    
+        const variantType = enumType.variants[variantName];
+        if (variantType === undefined) {
+        throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+        }
+    
+        const variantExpr = expr.expression();
+        if (variantType !== null) {
+        if (!variantExpr) {
+            throw new Error(`Variant ${enumName}::${variantName} requires data`);
+        }
+    
+        const dataType = this.inferType(variantExpr, env);
+    
+        if (JSON.stringify(variantType) !== JSON.stringify(dataType)) {
+            throw new Error(`Type mismatch in enum variant: expected ${JSON.stringify(variantType)}, got ${JSON.stringify(dataType)}`);
+        }
+    
+        if (expr.constructor.name === "VariableReferenceContext" && !isBaseType(dataType) && !isRefType(dataType)) {
+            const varName = variantExpr.identifier().IDENTIFIER().getText();
+            this.moveValue(env, varName);
+        }
+        } else if (variantExpr) {
+        throw new Error(`Variant ${enumName}::${variantName} does not take data`);
+        }
+    
+        return enumType;
+    }
+    
+    // Handle field access
+    if (expr.constructor.name === "FieldAccessContext") {
+        const obj = expr.expression();
+        const fieldName = expr.identifier().IDENTIFIER().getText();
+        const objType = this.inferType(obj, env);
+    
+        if (isStructType(objType)) {
+        const fieldType = objType.fields[fieldName];
+        if (!fieldType) {
+            throw new Error(`Field ${fieldName} does not exist in struct ${objType.name}`);
+        }
+        return fieldType;
+        }
+    
+        if (isRefType(objType) && isStructType(objType.base)) {
+        const fieldType = objType.base.fields[fieldName];
+        if (!fieldType) {
+            throw new Error(`Field ${fieldName} does not exist in struct ${objType.base.name}`);
+        }
+        return this.createRefType(fieldType, objType.mutable);
+        }
+    
+        throw new Error(`Cannot access field ${fieldName} on non-struct type ${JSON.stringify(objType)}`);
+    }
+
+    // Handle enum variant access without data (e.g., Book::Papery)
+    if (expr.constructor.name === "EnumAccessContext") {
+        const enumName = expr.identifier(0).IDENTIFIER().getText();
+        const variantName = expr.identifier(1).IDENTIFIER().getText();
+    
+        const enumType = this.lookupType(env, enumName);
+        if (!isEnumType(enumType)) {
+        throw new Error(`${enumName} is not an enum`);
+        }
+    
+        const variantType = enumType.variants[variantName];
+        if (variantType === undefined) {
+        throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+        }
+    
+        // If the variant has an associated type, accessing it like this is invalid.
+        if (variantType !== null) {
+        throw new Error(`Enum variant ${enumName}::${variantName} requires associated data`);
+        }
+    
+        return enumType;
+    }
+  
+    
+    // Handle match expressions
+    if (expr.constructor.name === "MatchExprContext") {
+        const scrutinee = expr.expression();
+        const scrutineeType = this.inferType(scrutinee, env);
+    
+        if (!isEnumType(scrutineeType)) {
+        throw new Error(`Match expression requires an enum type, got ${JSON.stringify(scrutineeType)}`);
+        }
+    
+        const arms = expr.match_arm();
+        const coveredVariants = new Set<string>();
+        const armTypes: Type[] = [];
+    
+        for (const arm of arms) {
+        const pattern = arm.match_pattern();
+        const [enumIdent, variantIdent, bindingIdent] = pattern.identifier();
+        const enumName = enumIdent.IDENTIFIER().getText();
+        const variantName = variantIdent.IDENTIFIER().getText();
+    
+        if (enumName !== scrutineeType.name) {
+            throw new Error(`Pattern refers to enum ${enumName}, but scrutinee is of type ${scrutineeType.name}`);
+        }
+    
+        const variantType = scrutineeType.variants[variantName];
+        if (variantType === undefined) {
+            throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+        }
+    
+        if (coveredVariants.has(variantName)) {
+            throw new Error(`Duplicate pattern for variant ${variantName}`);
+        }
+        coveredVariants.add(variantName);
+    
+        this.enterScope();
+        if (bindingIdent && variantType !== null) {
+            const bindingName = bindingIdent.IDENTIFIER().getText();
+            this.assignType(env, bindingName, variantType);
+        }
+    
+        const armType = this.inferType(arm.expression(), env);
+        armTypes.push(armType);
+    
+        this.exitScope();
+        }
+    
+        for (const variant in scrutineeType.variants) {
+        if (!coveredVariants.has(variant)) {
+            throw new Error(`Match expression does not cover variant ${variant}`);
+        }
+        }
+    
+        const firstType = armTypes[0];
+        for (const t of armTypes) {
+        if (JSON.stringify(t) !== JSON.stringify(firstType)) {
+            throw new Error(`Match arms have different types: ${JSON.stringify(firstType)} and ${JSON.stringify(t)}`);
+        }
+        }
+    
+        return firstType;
+    }
+  
     // Function calls
     if (expr.constructor.name === "FunctionCallContext") {
       const name = expr.identifier().IDENTIFIER().getText();
