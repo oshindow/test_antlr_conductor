@@ -39,7 +39,8 @@ import {
   For_stmtContext,
   PrintlnMacroContext,
   RefExprContext,
-  RefMutExprContext
+  RefMutExprContext,
+  DereferenceContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -70,7 +71,8 @@ export type Instruction =
   | { tag: 'GETFIELD' }
   | { tag: 'PRINT' }
   | { tag: 'REF'; sym: string }
-  | { tag: 'REFMUT'; sym: string };
+  | { tag: 'REFMUT'; sym: string }
+  | { tag: 'DEREF' };
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -115,150 +117,149 @@ export class CompileVisitor
     this.visit(ctx.expression(0));  // Left operand
     this.visit(ctx.expression(1));  // Right operand
     this.instrs.push({ tag: 'BINOP', sym: '-' });
- }
-
- visitDivide(ctx: DivideContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '/' });
-}
-
-visitMod(ctx: DivideContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0)); 
-    this.visit(ctx.expression(1)); 
-    this.instrs.push({ tag: 'BINOP', sym: '%' });
-}
-
-visitEqual(ctx: EqualContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '==' });
-}
-
-visitNotEqual(ctx: NotEqualContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '!=' });
-}
-
-visitLessThan(ctx: LessThanContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '<' });
-}
-
-visitLessEqual(ctx: LessEqualContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '<=' });
-}
-
-visitGreaterThan(ctx: GreaterThanContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '>' });
-}
-
-visitGreaterEqual(ctx: GreaterEqualContext): void {
-    const type = this.inferType(ctx, this.typeEnv);
-      
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.instrs.push({ tag: 'BINOP', sym: '>=' });
-}
-
-visitFunctionDecl(ctx: Function_declContext): void {
-  const name = ctx.identifier().IDENTIFIER().getText();
-  const params = ctx.parameter_list()
-      ? ctx.parameter_list().parameter().map(p => p.identifier().IDENTIFIER().getText())
-      : [];
-  const body = ctx.block();
-
-  // Infer parameter types and validate them
-  const paramTypes: Type[] = ctx.parameter_list()
-      ? ctx.parameter_list().parameter().map(p => {
-          const t = p.ty()?.getText();
-          if (t !== "number" && t !== "bool") {
-              throw new Error(`Unsupported param type: ${t}`);
-          }
-          return t as Type;
-      })
-      : [];
-
-  // Get the return type or default to "undefined"
-  const returnType: Type = ctx.ty() ? ctx.ty().getText() as Type : "undefined";
-
-  const fnType: FnType = {
-      kind: "fn",
-      params: paramTypes,
-      return: returnType
-  };
-
-  //console.log("FnType:", fnType, "params:", params, "name:", name);
-
-  this.assignType(this.typeEnv, name, fnType);
-
-  // Extend type environment with parameter bindings
-  const extendedEnv = extendTypeEnv(params, paramTypes, this.typeEnv);
-  //console.log("extendedEnv:", extendedEnv);
-
-  // Infer function body return type and compare
-  let bodyRetType = this.inferFunctionBodyType(body, extendedEnv);
-  if (!bodyRetType) {
-      bodyRetType = "undefined";
   }
 
-  if (bodyRetType !== returnType) {
-      throw new Error(`Type error in function '${name}'; declared return type ${returnType}, actual return type ${bodyRetType}`);
+  visitDivide(ctx: DivideContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '/' });
   }
 
-  // Code generation
-  const funcAddr = this.instrs.length + 2;
-  this.instrs.push({ tag: 'LDF', prms: params, addr: funcAddr });
+  visitMod(ctx: DivideContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0)); 
+      this.visit(ctx.expression(1)); 
+      this.instrs.push({ tag: 'BINOP', sym: '%' });
+  }
 
-  const gotoPlaceholder: Instruction = { tag: 'GOTO', addr: -1 };
-  this.instrs.push(gotoPlaceholder);
+  visitEqual(ctx: EqualContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '==' });
+  }
 
-  // Save and restore type environment around visiting function body
-  const prevEnv = this.typeEnv;
-  this.typeEnv = extendedEnv;
-  this.visitFunBlock(body);
-  this.typeEnv = prevEnv;
+  visitNotEqual(ctx: NotEqualContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '!=' });
+  }
 
-  gotoPlaceholder.addr = this.instrs.length;
-  this.instrs.push({ tag: 'ASSIGN', sym: name });
-}
+  visitLessThan(ctx: LessThanContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '<' });
+  }
 
+  visitLessEqual(ctx: LessEqualContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '<=' });
+  }
 
-  visitPrintlnMacro(ctx: PrintlnMacroContext): void {
-    const args = ctx.argument_list()?.expression() ?? [];
+  visitGreaterThan(ctx: GreaterThanContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '>' });
+  }
 
-    for (const expr of args) {
-        this.visit(expr); // Push values to stack
+  visitGreaterEqual(ctx: GreaterEqualContext): void {
+      const type = this.inferType(ctx, this.typeEnv);
+        
+      this.visit(ctx.expression(0));
+      this.visit(ctx.expression(1));
+      this.instrs.push({ tag: 'BINOP', sym: '>=' });
+  }
+
+  visitFunctionDecl(ctx: Function_declContext): void {
+    const name = ctx.identifier().IDENTIFIER().getText();
+    const params = ctx.parameter_list()
+        ? ctx.parameter_list().parameter().map(p => p.identifier().IDENTIFIER().getText())
+        : [];
+    const body = ctx.block();
+
+    // Infer parameter types and validate them
+    const paramTypes: Type[] = ctx.parameter_list()
+        ? ctx.parameter_list().parameter().map(p => {
+            const t = p.ty()?.getText();
+            if (t !== "number" && t !== "bool") {
+                throw new Error(`Unsupported param type: ${t}`);
+            }
+            return t as Type;
+        })
+        : [];
+
+    // Get the return type or default to "undefined"
+    const returnType: Type = ctx.ty() ? ctx.ty().getText() as Type : "undefined";
+
+    const fnType: FnType = {
+        kind: "fn",
+        params: paramTypes,
+        return: returnType
+    };
+
+    //console.log("FnType:", fnType, "params:", params, "name:", name);
+
+    this.assignType(this.typeEnv, name, fnType);
+
+    // Extend type environment with parameter bindings
+    const extendedEnv = extendTypeEnv(params, paramTypes, this.typeEnv);
+    //console.log("extendedEnv:", extendedEnv);
+
+    // Infer function body return type and compare
+    let bodyRetType = this.inferFunctionBodyType(body, extendedEnv);
+    if (!bodyRetType) {
+        bodyRetType = "undefined";
     }
 
-    // You could also support printing multiple values
-    for (let i = 0; i < args.length; i++) {
-        this.instrs.push({ tag: 'PRINT' });
+    if (bodyRetType !== returnType) {
+        throw new Error(`Type error in function '${name}'; declared return type ${returnType}, actual return type ${bodyRetType}`);
     }
 
-    this.instrs.push({ tag: 'POP' }); // Clean up last expression result if needed
- }
+    // Code generation
+    const funcAddr = this.instrs.length + 2;
+    this.instrs.push({ tag: 'LDF', prms: params, addr: funcAddr });
 
+    const gotoPlaceholder: Instruction = { tag: 'GOTO', addr: -1 };
+    this.instrs.push(gotoPlaceholder);
+
+    // Save and restore type environment around visiting function body
+    const prevEnv = this.typeEnv;
+    this.typeEnv = extendedEnv;
+    this.visitFunBlock(body);
+    this.typeEnv = prevEnv;
+
+    gotoPlaceholder.addr = this.instrs.length;
+    this.instrs.push({ tag: 'ASSIGN', sym: name });
+  }
+
+
+    visitPrintlnMacro(ctx: PrintlnMacroContext): void {
+      const args = ctx.argument_list()?.expression() ?? [];
+
+      for (const expr of args) {
+          this.visit(expr); // Push values to stack
+      }
+
+      // You could also support printing multiple values
+      for (let i = 0; i < args.length; i++) {
+          this.instrs.push({ tag: 'PRINT' });
+      }
+
+      this.instrs.push({ tag: 'POP' }); // Clean up last expression result if needed
+  }
 
   visitFunctionCall(ctx: FunctionCallContext): void {
       const type = this.inferType(ctx, this.typeEnv);
@@ -444,6 +445,12 @@ visitRefMutExpr(ctx: RefMutExprContext): void {
   this.instrs.push({ tag: 'REFMUT', sym: name });
 }
 
+visitDereference(ctx: DereferenceContext): void {
+  // First, visit the expression inside dereference (e.g., *x).
+  const expr = ctx.expression();
+  this.visit(expr);
+  this.instrs.push({ tag: 'DEREF' });
+  }
 
   visitStructInit(ctx: StructInitContext): void {
     const typeName = ctx.identifier().getText();  

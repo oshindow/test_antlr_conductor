@@ -21,8 +21,9 @@ export type Instruction =
   | { tag: 'JOIN' }
   | { tag: 'PRINT'}
   | { tag: 'GETFIELD' } // New instruction for field access
-  | { tag: 'REF'; sym: string } // Added instruction for reference
-  | { tag: 'REFMUT'; sym: string }; // Added instruction for mutable reference
+  | { tag: 'REF'; sym: string } 
+  | { tag: 'REFMUT'; sym: string } 
+  | { tag: 'DEREF' }; 
 
 interface ThreadContext {
   pc: number; // program counter
@@ -71,16 +72,31 @@ export class ConcurrentEvaluator {
             this.advance();
             console.log("REF: operand stack:", this.activeThread.stack);
             break;
-        }
+          }
         
-        case 'REFMUT': {
-            const ref = { tag: 'ref', sym: instr.sym, mut: true };
-            this.activeThread.stack.push(ref);
+          case 'REFMUT': {
+              const ref = { tag: 'ref', sym: instr.sym, mut: true };
+              this.activeThread.stack.push(ref);
+              this.advance();
+              console.log("REFMUT: operand stack:", this.activeThread.stack);
+              break;
+          }
+
+          case 'DEREF': {
+            // Assuming the operand stack contains a reference (e.g., pointer or reference type)
+            const reference = this.activeThread.stack.pop();
+            if (typeof reference !== 'object' || reference.tag !== 'ref') {
+              throw new Error(`Cannot dereference non-reference: ${JSON.stringify(reference)}`);
+            }
+    
+            // Dereference the reference to get the value it points to
+            const dereferencedValue = this.lookup(reference.sym); // lookup should get the value from the reference
+            this.activeThread.stack.push(dereferencedValue);
+    
+            console.log("DEREF: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             this.advance();
-            console.log("REFMUT: operand stack:", this.activeThread.stack);
             break;
-        }
-        
+          }
 
           case 'ASSIGN': {
             const val = this.activeThread.stack[this.activeThread.stack.length - 1];

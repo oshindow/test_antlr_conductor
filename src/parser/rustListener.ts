@@ -27,6 +27,7 @@ import { SimpleVariantContext } from "./rustParser.js";
 import { StructVariantContext } from "./rustParser.js";
 import { While_stmtContext } from "./rustParser.js";
 import { If_stmtContext } from "./rustParser.js";
+import { DereferenceContext } from "./rustParser.js";
 import { EnumStructInitContext } from "./rustParser.js";
 import { ModContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
@@ -316,6 +317,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitIf_stmt?: (ctx: If_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by the `dereference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterDereference?: (ctx: DereferenceContext) => void;
+    /**
+     * Exit a parse tree produced by the `dereference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitDereference?: (ctx: DereferenceContext) => void;
     /**
      * Enter a parse tree produced by the `enumStructInit`
      * labeled alternative in `rustParser.expression`.

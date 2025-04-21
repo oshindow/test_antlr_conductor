@@ -27,6 +27,7 @@ import { SimpleVariantContext } from "./rustParser.js";
 import { StructVariantContext } from "./rustParser.js";
 import { While_stmtContext } from "./rustParser.js";
 import { If_stmtContext } from "./rustParser.js";
+import { DereferenceContext } from "./rustParser.js";
 import { EnumStructInitContext } from "./rustParser.js";
 import { ModContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
@@ -221,6 +222,13 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitIf_stmt?: (ctx: If_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by the `dereference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitDereference?: (ctx: DereferenceContext) => Result;
     /**
      * Visit a parse tree produced by the `enumStructInit`
      * labeled alternative in `rustParser.expression`.

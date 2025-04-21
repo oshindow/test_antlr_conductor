@@ -105,7 +105,7 @@ let x = 42;
 let r = &x;
 let y = 5;
 let m = &mut y;
-m;
+*m;
 `;
 
 const inputStream = CharStream.fromString(input);
