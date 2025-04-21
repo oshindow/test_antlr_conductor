@@ -33,8 +33,8 @@ import { DereferenceContext } from "./rustParser.js";
 import { EnumStructInitContext } from "./rustParser.js";
 import { ModContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
-import { VariableReferenceContext } from "./rustParser.js";
 import { MatchExprContext } from "./rustParser.js";
+import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
@@ -66,8 +66,14 @@ import { Argument_listContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 import { Match_arm_listContext } from "./rustParser.js";
 import { Match_armContext } from "./rustParser.js";
-import { Match_patternContext } from "./rustParser.js";
-import { Pattern_listContext } from "./rustParser.js";
+import { WildcardPatternContext } from "./rustParser.js";
+import { NumberPatternContext } from "./rustParser.js";
+import { VariablePatternContext } from "./rustParser.js";
+import { EnumVariantPatternContext } from "./rustParser.js";
+import { EnumStructPatternContext } from "./rustParser.js";
+import { ParenPatternContext } from "./rustParser.js";
+import { Pattern_field_listContext } from "./rustParser.js";
+import { Pattern_fieldContext } from "./rustParser.js";
 
 
 /**
@@ -392,18 +398,6 @@ export class rustListener implements ParseTreeListener {
      */
     exitFieldAccess?: (ctx: FieldAccessContext) => void;
     /**
-     * Enter a parse tree produced by the `variableReference`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    enterVariableReference?: (ctx: VariableReferenceContext) => void;
-    /**
-     * Exit a parse tree produced by the `variableReference`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     */
-    exitVariableReference?: (ctx: VariableReferenceContext) => void;
-    /**
      * Enter a parse tree produced by the `matchExpr`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
@@ -415,6 +409,18 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitMatchExpr?: (ctx: MatchExprContext) => void;
+    /**
+     * Enter a parse tree produced by the `variableReference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    enterVariableReference?: (ctx: VariableReferenceContext) => void;
+    /**
+     * Exit a parse tree produced by the `variableReference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     */
+    exitVariableReference?: (ctx: VariableReferenceContext) => void;
     /**
      * Enter a parse tree produced by the `simple`
      * labeled alternative in `rustParser.expression`.
@@ -776,25 +782,97 @@ export class rustListener implements ParseTreeListener {
      */
     exitMatch_arm?: (ctx: Match_armContext) => void;
     /**
-     * Enter a parse tree produced by `rustParser.match_pattern`.
+     * Enter a parse tree produced by the `wildcardPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      */
-    enterMatch_pattern?: (ctx: Match_patternContext) => void;
+    enterWildcardPattern?: (ctx: WildcardPatternContext) => void;
     /**
-     * Exit a parse tree produced by `rustParser.match_pattern`.
+     * Exit a parse tree produced by the `wildcardPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      */
-    exitMatch_pattern?: (ctx: Match_patternContext) => void;
+    exitWildcardPattern?: (ctx: WildcardPatternContext) => void;
     /**
-     * Enter a parse tree produced by `rustParser.pattern_list`.
+     * Enter a parse tree produced by the `numberPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      */
-    enterPattern_list?: (ctx: Pattern_listContext) => void;
+    enterNumberPattern?: (ctx: NumberPatternContext) => void;
     /**
-     * Exit a parse tree produced by `rustParser.pattern_list`.
+     * Exit a parse tree produced by the `numberPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      */
-    exitPattern_list?: (ctx: Pattern_listContext) => void;
+    exitNumberPattern?: (ctx: NumberPatternContext) => void;
+    /**
+     * Enter a parse tree produced by the `variablePattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    enterVariablePattern?: (ctx: VariablePatternContext) => void;
+    /**
+     * Exit a parse tree produced by the `variablePattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    exitVariablePattern?: (ctx: VariablePatternContext) => void;
+    /**
+     * Enter a parse tree produced by the `enumVariantPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    enterEnumVariantPattern?: (ctx: EnumVariantPatternContext) => void;
+    /**
+     * Exit a parse tree produced by the `enumVariantPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    exitEnumVariantPattern?: (ctx: EnumVariantPatternContext) => void;
+    /**
+     * Enter a parse tree produced by the `enumStructPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    enterEnumStructPattern?: (ctx: EnumStructPatternContext) => void;
+    /**
+     * Exit a parse tree produced by the `enumStructPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    exitEnumStructPattern?: (ctx: EnumStructPatternContext) => void;
+    /**
+     * Enter a parse tree produced by the `parenPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    enterParenPattern?: (ctx: ParenPatternContext) => void;
+    /**
+     * Exit a parse tree produced by the `parenPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     */
+    exitParenPattern?: (ctx: ParenPatternContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.pattern_field_list`.
+     * @param ctx the parse tree
+     */
+    enterPattern_field_list?: (ctx: Pattern_field_listContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.pattern_field_list`.
+     * @param ctx the parse tree
+     */
+    exitPattern_field_list?: (ctx: Pattern_field_listContext) => void;
+    /**
+     * Enter a parse tree produced by `rustParser.pattern_field`.
+     * @param ctx the parse tree
+     */
+    enterPattern_field?: (ctx: Pattern_fieldContext) => void;
+    /**
+     * Exit a parse tree produced by `rustParser.pattern_field`.
+     * @param ctx the parse tree
+     */
+    exitPattern_field?: (ctx: Pattern_fieldContext) => void;
 
     visitTerminal(node: TerminalNode): void {}
     visitErrorNode(node: ErrorNode): void {}

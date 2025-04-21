@@ -112,6 +112,25 @@ export class CompileVisitor
       this.instrs.push({ tag: "BINOP", sym: op });
   }
 
+  visitNumber(ctx: NumberContext): void {
+        const val = Number(ctx.NUMBER().getText());
+        this.instrs.push({ tag: "LDC", val });
+    }
+
+visitStart (ctx: StartContext) {
+    const statements = ctx.statement();
+    for (const stmt of statements) {
+        this.visit(stmt);
+        if (!stmt.return_stmt()) {
+            this.instrs.push({ tag: 'POP' });
+        }
+    }
+    this.instrs.push({ tag: "DONE" });
+    // this.instrs.push({ tag: "LDC", val: undefined });
+    // this.instrs.push({ tag: "RETURN" });
+    // this.instrs.push({ tag: "DONE" });
+}
+
   visitAdd(ctx: AddContext): void {
       const type = this.inferType(ctx, this.typeEnv);
       
@@ -519,6 +538,70 @@ visitDereference(ctx: DereferenceContext): void {
   
     this.instrs.push({ tag: 'LDC', val });
   }
+
+  visitMatchExpr(ctx: MatchExprContext) {
+    this.visit(ctx.expression()); // compile the value to match against
+    const arms = ctx.match_arm_list()?.match_arm() ?? [];
+    const endJumps: Instruction[] = [];
+  
+    for (const arm of arms) {
+      const pattern = arm.children?.[0];
+      
+      this.instrs.push({ tag: 'ENTER_SCOPE', syms: [] });
+  
+      // Duplicate the value to match so we can compare without consuming it
+      this.instrs.push({ tag: 'LD', sym: '__match_val' }); // Pseudo: assumes value is in `__match_val`
+      this.visitPattern(pattern); // pattern will push value to match against
+  
+      const jofInstr: Instruction = { tag: 'JOF', addr: -1 }; // skip if not matching
+      this.instrs.push(jofInstr);
+  
+      // Match succeeded
+      this.visit(arm.expression()); // compile the arm body
+      const gotoEnd: Instruction = { tag: 'GOTO', addr: -1 }; // skip other arms
+      this.instrs.push(gotoEnd);
+      endJumps.push(gotoEnd);
+  
+      jofInstr.addr = this.instrs.length; // if no match, jump here
+  
+      this.instrs.push({ tag: 'EXIT_SCOPE' });
+    }
+  
+    for (const jmp of endJumps) {
+      if (jmp.tag === 'GOTO' || jmp.tag === 'JOF') {
+          jmp.addr = this.instrs.length;
+      }
+    }
+    this.instrs.push({ tag: 'POP' }); // pop the matched value
+  }
+  
+
+  visitPattern(pattern: any) {
+    if (pattern instanceof VariableReferenceContext) {
+      const name = pattern.identifier().getText();
+      // Save the matched value into the variable
+      this.instrs.push({ tag: 'ASSIGN', sym: name });
+      this.instrs.push({ tag: 'LDC', val: true }); // Always match
+    } else if (pattern instanceof EnumAccessContext) {
+      const enumName = pattern.identifier(0).getText();
+      const variantName = pattern.identifier(1).getText();
+  
+      // Compare the enum tag
+      this.instrs.push({ tag: 'LDC', val: { __enum: enumName, tag: variantName } });
+      this.instrs.push({ tag: 'BINOP', sym: '==' }); // Check if it matches
+    } else if (pattern instanceof FieldAccessContext) {
+      const fieldName = pattern.identifier().getText();
+      this.instrs.push({ tag: 'LDC', val: fieldName });
+      this.instrs.push({ tag: 'GETFIELD' });
+      this.instrs.push({ tag: 'LDC', val: true }); // Assume field always exists
+    } else {
+      throw new Error("Unsupported pattern type");
+    }
+  }
+    
+  visitParenExpr(ctx: ParenExprContext): void {
+        this.visit(ctx.expression());
+ }  
 
   lookupType(env: TypeEnv, sym: string): Type {
     return typeChecker.lookupType(env, sym);

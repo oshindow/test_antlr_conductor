@@ -143,25 +143,23 @@ const input = `
 // } 
 // x;
 
-enum Color {
-    Red,
-    Green,
-    Blue,
+
+enum Book {
+    Papery { index: u32 },
+    Electronic { url: String },
 }
 
-struct Point {
-    x: i32,
-    y: i32,
-}
+let book = Book::Papery { index: 1001 };
+let ebook = Book::Electronic { url: "url ..." };
 
-struct Rectangle {
-    top_left: Point,
-    width: i32,
-    height: i32,
+match ebook {
+    Book::Papery { index } => {
+        println!(index);
+    }
+    Book::Electronic { url } => {
+        println!(url);
+    }
 }
-
-let c = Color::Red; // Correct type annotation
-c; // Accessing field of struct
 `;
 
 const inputStream = CharStream.fromString(input);

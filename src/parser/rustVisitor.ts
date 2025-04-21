@@ -33,8 +33,8 @@ import { DereferenceContext } from "./rustParser.js";
 import { EnumStructInitContext } from "./rustParser.js";
 import { ModContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
-import { VariableReferenceContext } from "./rustParser.js";
 import { MatchExprContext } from "./rustParser.js";
+import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
 import { ParenExprContext } from "./rustParser.js";
@@ -66,8 +66,14 @@ import { Argument_listContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 import { Match_arm_listContext } from "./rustParser.js";
 import { Match_armContext } from "./rustParser.js";
-import { Match_patternContext } from "./rustParser.js";
-import { Pattern_listContext } from "./rustParser.js";
+import { WildcardPatternContext } from "./rustParser.js";
+import { NumberPatternContext } from "./rustParser.js";
+import { VariablePatternContext } from "./rustParser.js";
+import { EnumVariantPatternContext } from "./rustParser.js";
+import { EnumStructPatternContext } from "./rustParser.js";
+import { ParenPatternContext } from "./rustParser.js";
+import { Pattern_field_listContext } from "./rustParser.js";
+import { Pattern_fieldContext } from "./rustParser.js";
 
 
 /**
@@ -267,19 +273,19 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitFieldAccess?: (ctx: FieldAccessContext) => Result;
     /**
-     * Visit a parse tree produced by the `variableReference`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitVariableReference?: (ctx: VariableReferenceContext) => Result;
-    /**
      * Visit a parse tree produced by the `matchExpr`
      * labeled alternative in `rustParser.expression`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitMatchExpr?: (ctx: MatchExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `variableReference`
+     * labeled alternative in `rustParser.expression`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitVariableReference?: (ctx: VariableReferenceContext) => Result;
     /**
      * Visit a parse tree produced by the `simple`
      * labeled alternative in `rustParser.expression`.
@@ -492,16 +498,58 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitMatch_arm?: (ctx: Match_armContext) => Result;
     /**
-     * Visit a parse tree produced by `rustParser.match_pattern`.
+     * Visit a parse tree produced by the `wildcardPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitMatch_pattern?: (ctx: Match_patternContext) => Result;
+    visitWildcardPattern?: (ctx: WildcardPatternContext) => Result;
     /**
-     * Visit a parse tree produced by `rustParser.pattern_list`.
+     * Visit a parse tree produced by the `numberPattern`
+     * labeled alternative in `rustParser.match_pattern`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitPattern_list?: (ctx: Pattern_listContext) => Result;
+    visitNumberPattern?: (ctx: NumberPatternContext) => Result;
+    /**
+     * Visit a parse tree produced by the `variablePattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitVariablePattern?: (ctx: VariablePatternContext) => Result;
+    /**
+     * Visit a parse tree produced by the `enumVariantPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEnumVariantPattern?: (ctx: EnumVariantPatternContext) => Result;
+    /**
+     * Visit a parse tree produced by the `enumStructPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEnumStructPattern?: (ctx: EnumStructPatternContext) => Result;
+    /**
+     * Visit a parse tree produced by the `parenPattern`
+     * labeled alternative in `rustParser.match_pattern`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitParenPattern?: (ctx: ParenPatternContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.pattern_field_list`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPattern_field_list?: (ctx: Pattern_field_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.pattern_field`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPattern_field?: (ctx: Pattern_fieldContext) => Result;
 }
 
