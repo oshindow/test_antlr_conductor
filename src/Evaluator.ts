@@ -24,6 +24,7 @@ export type Instruction =
   | { tag: 'REF'; sym: string } 
   | { tag: 'REFMUT'; sym: string } 
   | { tag: 'DEREF' } 
+  | { tag: 'DECL', sym: string }
   | { tag: 'DEREF_ASSIGN' }; 
 
 interface ThreadContext {
@@ -34,7 +35,7 @@ interface ThreadContext {
   timeBudget: number;
 }
 
-export class ConcurrentEvaluator {
+export class ConcurrentEvaluator {ev
   private readonly TIME_SLICE = 5;
   private threadQueue: ThreadContext[] = [];
   private nextThreadId = 0;
@@ -127,7 +128,6 @@ export class ConcurrentEvaluator {
 
           case 'PRINT': {
             const val = this.activeThread.stack.pop();
-        
             if (val === undefined) {
                 console.log('undefined');
             } else if (val === null) {
@@ -137,7 +137,6 @@ export class ConcurrentEvaluator {
             } else {
                 console.log(val);
             }
-        
             this.advance();
             break;
         }

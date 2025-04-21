@@ -42,7 +42,8 @@ import {
   RefMutExprContext,
   DereferenceContext,
   IdentLhsContext,
-  DerefLhsContext
+  DerefLhsContext,
+  StringLiteralContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -75,7 +76,8 @@ export type Instruction =
   | { tag: 'REF'; sym: string }
   | { tag: 'REFMUT'; sym: string }
   | { tag: 'DEREF' }
-  | { tag: 'DEREF_ASSIGN' };
+  | { tag: 'DEREF_ASSIGN' }
+  | { tag: 'DECL'; sym: string };
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -93,8 +95,13 @@ export class CompileVisitor
   visitBoolLiteral(ctx: BoolLiteralContext): void {
       const val = ctx.BOOL().getText() === "true";
       this.instrs.push({ tag: "LDC", val });
-      
   }
+
+  visitStringLiteral(ctx: StringLiteralContext): void {
+    const text = ctx.getText(); // includes quotes
+    const value = text.slice(1, -1); // strip quotes
+    this.instrs.push({ tag: 'LDC', val: value });
+  }  
 
   visitMultiply(ctx: MultiplyContext): void {
     const type = this.inferType(ctx, this.typeEnv);
@@ -427,7 +434,9 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
         this.visitIfExpr(ctx.if_stmt());
       } else if (ctx.while_stmt()) {
         this.visitWhileExpr(ctx.while_stmt()!);
-    }
+      } else if (ctx.for_stmt()) {
+        this.visitForExpr(ctx.for_stmt()!);
+      }
   }
 
   visitVariableReference(ctx: VariableReferenceContext): void {
@@ -590,34 +599,53 @@ visitDereference(ctx: DereferenceContext): void {
     }
 
     visitForExpr(ctx: For_stmtContext): void {
-        this.visit(ctx.expression(0));  
-
-        const loopStart = this.instrs.length;
+        const identifier = ctx.identifier().IDENTIFIER().getText();
     
-        // Visit the condition (guard)
-        this.visit(ctx.expression(1));  
-        const conditionAddr = this.instrs.length;  
+        // Evaluate and store start and end expressions
+        this.visit(ctx.expression()[1]); // End expression first for _tmp_end
+        this.instrs.push({ tag: 'ASSIGN', sym: '_tmp_end' });
     
-        this.instrs.push({ tag: 'JOF', addr: -1 });
+        this.visit(ctx.expression()[0]); // Start expression
+        this.instrs.push({ tag: 'ASSIGN', sym: identifier }); // Assign start to loop variable
     
-        // Visit the body (statements inside the loop)
-        this.visit(ctx.block());  // Visit the loop's body statements
+        // Enter loop scope
+        this.instrs.push({ tag: 'ENTER_SCOPE', syms: [identifier] });
     
-        // Visit the update (increment, decrement, or modification)
-        this.visit(ctx.expression(2));  // The third expression is the update, e.g., `i = i + 1`
+        // Save the position of the loop condition
+        const loopConditionPos = this.instrs.length;
     
-        // Jump back to the condition to check again
-        this.instrs.push({ tag: 'GOTO', addr: loopStart });
-
-        const condJumpInstr = this.instrs[conditionAddr];
-        if (condJumpInstr.tag === 'JOF') {
-            condJumpInstr.addr = this.instrs.length;
-        } else {
-            throw new Error('Expected JOF instruction at condition jump address');
-        }
-        
+        // Load current loop variable
+        this.instrs.push({ tag: 'LD', sym: identifier });
+    
+        // Load end value
+        this.instrs.push({ tag: 'LD', sym: '_tmp_end' });
+    
+        // Compare: current <= end
+        this.instrs.push({ tag: 'BINOP', sym: '<=' });
+    
+        // Conditional jump (exit loop if false)
+        const conditionalJumpPos = this.instrs.length;
+        this.instrs.push({ tag: 'JOF', addr: -1 }); // To be patched
+    
+        // Visit the loop body
+        this.visit(ctx.block());
+    
+        // Increment loop variable
+        this.instrs.push({ tag: 'LD', sym: identifier });
+        this.instrs.push({ tag: 'LDC', val: 1 });
+        this.instrs.push({ tag: 'BINOP', sym: '+' });
+        this.instrs.push({ tag: 'ASSIGN', sym: identifier });
+    
+        // Jump back to loop condition
+        this.instrs.push({ tag: 'GOTO', addr: loopConditionPos });
+    
+        // Patch jump address to instruction after the loop
+        (this.instrs[conditionalJumpPos] as { tag: 'JOF', addr: number }).addr = this.instrs.length;
+    
+        // Exit the loop scope
+        this.instrs.push({ tag: 'EXIT_SCOPE' });
     }
-       
+    
     
     visitLogicalAnd(ctx: LogicalAndContext): void {
         const type = this.inferType(ctx, this.typeEnv);

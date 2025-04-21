@@ -127,7 +127,21 @@ const input = `
 
 // if false { 5 } else { "hello" } // Caught error: Type mismatch in if branches: then -> number, else -> string
 // if true { 5 } else { true } // Caught error: Type mismatch in if branches: then -> number, else -> bool
-if true { 5 } else { 10 }; // should return 5
+// if true { 5 } else { 10 }; // should return 5
+
+// let mut counter = 0;
+// while counter < 10 {
+//     counter = counter + 1; // counter is of type "number"
+// }
+// counter; // should return 10
+
+// println!("Hello, world!"); // should print "Hello, world!"
+
+let mut x = 0;
+for i in 0..5 {
+   x = i;
+} 
+x;
 `;
 
 const inputStream = CharStream.fromString(input);

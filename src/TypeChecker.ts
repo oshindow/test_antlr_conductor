@@ -2,7 +2,8 @@
 export type BaseType = "number" | "bool" | "undefined" | "string" | "void" | "i32" | "i64" | "f32" | "f64" | "char" | "u8" | "u16" | "u32" | "u64";
 export type RefType = { kind: "ref", mutable: boolean, base: Type, lifetime: string };
 export type FnType = { kind: "fn", params: Type[], return: Type };
-export type Type = BaseType | RefType | FnType | [Type[], Type];
+type ArrayType = { kind: "array", element: Type };
+export type Type = BaseType | RefType | FnType | [Type[], Type] | ArrayType;
 
 export type TypeEnv = Record<string, TypeState>[];
 
@@ -58,6 +59,10 @@ export function isRefType(type: Type): type is RefType {
 export function isFnType(type: Type): type is FnType {
   return typeof type === "object" && type !== null && "kind" in type && type.kind === "fn";
 }
+
+export function isArrayType(t: Type): t is { kind: "array", element: Type } {
+    return typeof t === "object" && t !== null && "kind" in t && t.kind === "array";
+} 
 
 export function freshLifetime(): string {
   return `'t${lifetimeCounter++}`;
@@ -415,6 +420,30 @@ export class TypeChecker {
         }
         
         return thenType;
+    }
+
+    if (expr.constructor.name === "WhileLoopContext") {
+        const condType = this.inferType(expr.expression(), env);
+        if (condType !== "bool") {
+          throw new Error(`While loop condition must be boolean, got ${condType}`);
+        }
+      
+        this.enterScope();
+        this.inferType(expr.block(), env); // Evaluate block for side effects and type safety
+        this.exitScope();
+      
+        return "undefined"; // `while` loops do not return a value
+      }
+
+    if (expr.constructor.name === "For_stmtContext") {
+        const iterType = this.inferType(expr.expression(), env);
+        if (!isArrayType(iterType)) {
+          throw new Error(`For loop requires an array, got ${iterType}`);
+        }
+        this.enterScope();
+        this.inferType(expr.block(), env); // Evaluate block for side effects and type safety
+        this.exitScope();
+        return "undefined"; // `for` loops do not return a value
     }
 
     // Function calls
