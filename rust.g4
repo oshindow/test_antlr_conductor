@@ -9,7 +9,7 @@ statement:
     let_stmt ';'?
     | assign_stmt ';'?
     | return_stmt ';'?
-    | expression_stmt ';'
+    | expression_stmt ';' ?
     | function_decl 
     | for_stmt  
     | loop_stmt
@@ -132,6 +132,7 @@ expression
     | expression '-' expression # subtract
     | expression '/' expression # divide
     | expression '%' expression # mod
+    | 'match' expression '{' match_arm_list '}'   # matchExpr
     | LPAREN expression RPAREN  # parenExpr
     | identifier                # variableReference
     | number                    # simple
@@ -143,7 +144,6 @@ expression
     | identifier '{' field_init_list? '}'  # structInit
     | expression '.' identifier              # fieldAccess
     | identifier '::' identifier    # enumAccess
-    | 'match' expression '{' match_arm_list '}'   # matchExpr
     | identifier '::' identifier '{' field_init_list? '}'    # enumStructInit
     ;
 
@@ -190,19 +190,29 @@ match_arm_list:
 ;
 
 match_arm:
-    match_pattern '=>' expression
+    match_pattern '=>' (block | expression)
 ;
 
-match_pattern:
-    NUMBER
-    | '_'
-    | identifier '::' identifier                     
-    | identifier '::' identifier '{' pattern_list '}'  
-    ;
 
-pattern_list:
-    identifier (',' identifier)* ','?
+match_pattern
+    : '_'                                         # wildcardPattern
+    | NUMBER                                      # numberPattern
+    | identifier                                  # variablePattern
+    | identifier '::' identifier                  # enumVariantPattern
+    | identifier '::' identifier '{' pattern_field_list? '}' # enumStructPattern
+    | LPAREN match_pattern RPAREN                # parenPattern
 ;
+
+
+pattern_field_list:
+    pattern_field (',' pattern_field)* ','?
+;
+
+pattern_field:
+    identifier ':' match_pattern  // e.g., pages: p
+    | identifier                  // shorthand: pages
+;
+
 
 NUMBER:
     [0-9]+
