@@ -120,11 +120,14 @@ const input = `
 // *y; // Should return 5
 
 
-let x = 3;
-let r = &mut x;
-*r = 9;
-*r; // Should return 9
+// let x = 3;
+// let r = &mut x;
+// *r = 9;
+// *r; // Should return 9
 
+// if false { 5 } else { "hello" } // Caught error: Type mismatch in if branches: then -> number, else -> string
+// if true { 5 } else { true } // Caught error: Type mismatch in if branches: then -> number, else -> bool
+if true { 5 } else { 10 }; // should return 5
 `;
 
 const inputStream = CharStream.fromString(input);

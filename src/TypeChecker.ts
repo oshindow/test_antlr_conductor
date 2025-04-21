@@ -1,5 +1,5 @@
 // Type definitions with extensions for ownership
-export type BaseType = "number" | "bool" | "undefined";
+export type BaseType = "number" | "bool" | "undefined" | "string" | "void" | "i32" | "i64" | "f32" | "f64" | "char" | "u8" | "u16" | "u32" | "u64";
 export type RefType = { kind: "ref", mutable: boolean, base: Type, lifetime: string };
 export type FnType = { kind: "fn", params: Type[], return: Type };
 export type Type = BaseType | RefType | FnType | [Type[], Type];
@@ -290,6 +290,10 @@ export class TypeChecker {
     if (expr.constructor.name === "BoolLiteralContext") {
       return "bool";
     }
+
+    if (expr.constructor.name === "StringLiteralContext") {
+      return "string";
+    }
   
     // Handle variable references
     if (expr.constructor.name === "VariableReferenceContext") {
@@ -385,6 +389,33 @@ export class TypeChecker {
     // Unary operators
     if (expr.constructor.name === "LogicalNotContext") return un("!", expr.expression());
     if (expr.constructor.name === "UnaryMinusContext") return un("-unary", expr.expression());
+
+    // Handle if-else expressions
+    if (expr.constructor.name === "IfExprContext") {
+        const condType = this.inferType(expr.expression(0), env);
+        if (condType !== "bool") {
+            throw new Error(`Expected predicate type: bool, actual predicate type: ${condType}`);
+        }
+        
+        // Create new scope for each branch
+        this.enterScope();
+        const thenType = this.inferType(expr.expression(1), env);
+        this.exitScope();
+        
+        let elseType: Type = "undefined";
+        if (expr.expression().length > 2) {
+            this.enterScope();
+            elseType = this.inferType(expr.expression(2), env);
+            this.exitScope();
+        }
+        console.log("thenType:", thenType);
+        console.log("elseType:", elseType);
+        if (JSON.stringify(thenType) !== JSON.stringify(elseType)) {
+            throw new Error(`Types of branches not matching; consequent type: ${thenType}, alternative type: ${elseType}`);
+        }
+        
+        return thenType;
+    }
 
     // Function calls
     if (expr.constructor.name === "FunctionCallContext") {
