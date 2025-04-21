@@ -114,10 +114,17 @@ const input = `
 // let r2 = &r1; // This is a reference to a reference
 // **r2; // Should return 1
 
-let x = 5;
-let m = &mut x;
-let y = m; 
-*y; // Should return 5
+// let x = 5;
+// let m = &mut x;
+// let y = m; 
+// *y; // Should return 5
+
+
+let x = 3;
+let r = &mut x;
+*r = 9;
+*r; // Should return 9
+
 `;
 
 const inputStream = CharStream.fromString(input);

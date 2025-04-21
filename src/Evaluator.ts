@@ -23,7 +23,8 @@ export type Instruction =
   | { tag: 'GETFIELD' } // New instruction for field access
   | { tag: 'REF'; sym: string } 
   | { tag: 'REFMUT'; sym: string } 
-  | { tag: 'DEREF' }; 
+  | { tag: 'DEREF' } 
+  | { tag: 'DEREF_ASSIGN' }; 
 
 interface ThreadContext {
   pc: number; // program counter
@@ -97,6 +98,24 @@ export class ConcurrentEvaluator {
             this.advance();
             break;
           }
+
+          case 'DEREF_ASSIGN': {
+            const reference = this.activeThread.stack.pop(); // the reference (*r)
+            const value = this.activeThread.stack.pop();     // the value (e.g. 9)
+        
+            if (typeof reference !== 'object' || reference.tag !== 'ref') {
+                throw new Error(`Cannot assign to non-reference: ${JSON.stringify(reference)}`);
+            }
+        
+            if (!reference.mut) {
+                throw new Error(`Cannot assign to immutable reference: ${reference.sym}`);
+            }
+        
+            this.assign(reference.sym, value);
+            this.advance();
+            break;
+        }
+        
 
           case 'ASSIGN': {
             const val = this.activeThread.stack[this.activeThread.stack.length - 1];

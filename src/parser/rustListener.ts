@@ -7,6 +7,8 @@ import { StartContext } from "./rustParser.js";
 import { StatementContext } from "./rustParser.js";
 import { Let_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
+import { DerefLhsContext } from "./rustParser.js";
+import { IdentLhsContext } from "./rustParser.js";
 import { Return_stmtContext } from "./rustParser.js";
 import { Expression_stmtContext } from "./rustParser.js";
 import { Function_declContext } from "./rustParser.js";
@@ -113,6 +115,30 @@ export class rustListener implements ParseTreeListener {
      * @param ctx the parse tree
      */
     exitAssign_stmt?: (ctx: Assign_stmtContext) => void;
+    /**
+     * Enter a parse tree produced by the `derefLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     */
+    enterDerefLhs?: (ctx: DerefLhsContext) => void;
+    /**
+     * Exit a parse tree produced by the `derefLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     */
+    exitDerefLhs?: (ctx: DerefLhsContext) => void;
+    /**
+     * Enter a parse tree produced by the `identLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     */
+    enterIdentLhs?: (ctx: IdentLhsContext) => void;
+    /**
+     * Exit a parse tree produced by the `identLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     */
+    exitIdentLhs?: (ctx: IdentLhsContext) => void;
     /**
      * Enter a parse tree produced by `rustParser.return_stmt`.
      * @param ctx the parse tree

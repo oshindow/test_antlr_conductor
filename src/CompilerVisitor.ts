@@ -40,7 +40,9 @@ import {
   PrintlnMacroContext,
   RefExprContext,
   RefMutExprContext,
-  DereferenceContext
+  DereferenceContext,
+  IdentLhsContext,
+  DerefLhsContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -72,7 +74,8 @@ export type Instruction =
   | { tag: 'PRINT' }
   | { tag: 'REF'; sym: string }
   | { tag: 'REFMUT'; sym: string }
-  | { tag: 'DEREF' };
+  | { tag: 'DEREF' }
+  | { tag: 'DEREF_ASSIGN' };
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -388,11 +391,21 @@ visitLet_stmt(ctx: Let_stmtContext): void {
 }
 
 
-  visitAssign_stmt(ctx: Assign_stmtContext): void {
-      const name = ctx.identifier().IDENTIFIER().getText();
-      this.visit(ctx.expression());
-      this.instrs.push({ tag: 'ASSIGN', sym: name });
-  }
+visitAssign_stmt(ctx: Assign_stmtContext): any {
+    this.visit(ctx.expression());
+
+    if (ctx.lhs() instanceof IdentLhsContext) {
+        const lhs = ctx.lhs() as IdentLhsContext;
+        const name = lhs.identifier().getText();
+        this.instrs.push({ tag: 'ASSIGN', sym: name });
+    } else if (ctx.lhs() instanceof DerefLhsContext) {
+        // compile the expression that evaluates to the reference
+        this.visit((ctx.lhs() as DerefLhsContext).expression());
+        // emit special instruction for deref-assign
+        this.instrs.push({ tag: 'DEREF_ASSIGN' });
+    }
+}
+
   visitExpression_stmt(ctx: Expression_stmtContext): void {
       this.visit(ctx.expression());
   }

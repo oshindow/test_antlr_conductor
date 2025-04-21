@@ -26,8 +26,14 @@ let_stmt:
 ;
 
 assign_stmt:
-    identifier '=' expression
+    lhs '=' expression
 ;
+
+lhs:
+    '*' expression         # derefLhs
+    | identifier           # identLhs
+;
+
 
 return_stmt:
     'return' expression

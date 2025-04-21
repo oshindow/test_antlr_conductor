@@ -7,6 +7,8 @@ import { StartContext } from "./rustParser.js";
 import { StatementContext } from "./rustParser.js";
 import { Let_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
+import { DerefLhsContext } from "./rustParser.js";
+import { IdentLhsContext } from "./rustParser.js";
 import { Return_stmtContext } from "./rustParser.js";
 import { Expression_stmtContext } from "./rustParser.js";
 import { Function_declContext } from "./rustParser.js";
@@ -100,6 +102,20 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitAssign_stmt?: (ctx: Assign_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by the `derefLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitDerefLhs?: (ctx: DerefLhsContext) => Result;
+    /**
+     * Visit a parse tree produced by the `identLhs`
+     * labeled alternative in `rustParser.lhs`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIdentLhs?: (ctx: IdentLhsContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.return_stmt`.
      * @param ctx the parse tree
