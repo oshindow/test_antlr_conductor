@@ -101,11 +101,23 @@ const input = `
 // }
 // // inferred_type(5); // Caught error: Type error in function 'inferred_type'; declared return type number, actual return type [object Object]
 
-let x = 42;
-let r = &x;
-let y = 5;
-let m = &mut y;
-*m;
+// let z = 100;
+// let r1 = &z;
+// let r2 = &mut z; // Caught error: Cannot mutably borrow value that has shared borrows: z
+
+// let z = 100;
+// let r1 = &mut z;
+// let r2 = &z; // Caught error: Cannot immutably borrow value that is already mutably borrowed: z
+
+// let x = 1;
+// let r1 = &x;
+// let r2 = &r1; // This is a reference to a reference
+// **r2; // Should return 1
+
+let x = 5;
+let m = &mut x;
+let y = m; 
+*y; // Should return 5
 `;
 
 const inputStream = CharStream.fromString(input);
