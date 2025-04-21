@@ -37,7 +37,9 @@ import {
   EqualContext,
   DivideContext,
   For_stmtContext,
-  PrintlnMacroContext
+  PrintlnMacroContext,
+  RefExprContext,
+  RefMutExprContext
 } from "./parser/rustParser.js";
 
 import { AbstractParseTreeVisitor } from "antlr4ng";
@@ -66,7 +68,9 @@ export type Instruction =
   | { tag: 'YIELD' }          
   | { tag: 'JOIN' }
   | { tag: 'GETFIELD' }
-  | { tag: 'PRINT' };
+  | { tag: 'PRINT' }
+  | { tag: 'REF'; sym: string }
+  | { tag: 'REFMUT'; sym: string };
   
 export class CompileVisitor
   extends AbstractParseTreeVisitor<void>
@@ -416,6 +420,29 @@ visitLet_stmt(ctx: Let_stmtContext): void {
       const name = ctx.identifier().IDENTIFIER().getText();
       this.instrs.push({ tag: 'LD', sym: name });
   }
+
+  visitRefExpr(ctx: RefExprContext): void {
+    const expr = ctx.expression();
+
+    // For now, only allow referencing variables directly (not complex expressions)
+    if (!(expr instanceof VariableReferenceContext)) {
+        throw new Error("Only variables can be borrowed in this simplified model.");
+    }
+
+    const name = expr.identifier().IDENTIFIER().getText();
+    this.instrs.push({ tag: 'REF', sym: name });
+}
+
+visitRefMutExpr(ctx: RefMutExprContext): void {
+  const expr = ctx.expression();
+
+  if (!(expr instanceof VariableReferenceContext)) {
+      throw new Error("Only variables can be mutably borrowed in this simplified model.");
+  }
+
+  const name = expr.identifier().IDENTIFIER().getText();
+  this.instrs.push({ tag: 'REFMUT', sym: name });
+}
 
 
   visitStructInit(ctx: StructInitContext): void {

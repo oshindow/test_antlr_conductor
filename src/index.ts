@@ -101,9 +101,11 @@ const input = `
 // }
 // // inferred_type(5); // Caught error: Type error in function 'inferred_type'; declared return type number, actual return type [object Object]
 
-let t = 1;
-let _u = t; // t is moved
-//println!("{:?}", t); // Error: use of moved value
+let x = 42;
+let r = &x;
+let y = 5;
+let m = &mut y;
+m;
 `;
 
 const inputStream = CharStream.fromString(input);

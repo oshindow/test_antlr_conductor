@@ -298,9 +298,10 @@ export class TypeChecker {
     }
     
     // Handle references (&x or &mut x)
-    if (expr.constructor.name === "ReferenceExprContext") {
+    if (expr.constructor.name === "RefExprContext" || 
+        expr.constructor.name === "RefMutExprContext") {
       const target = expr.expression();
-      const isMut = Boolean(expr.MUT());
+      const isMut = expr.constructor.name === "RefMutExprContext";
       
       if (target.constructor.name === "VariableReferenceContext") {
         const name = target.identifier().IDENTIFIER().getText();
@@ -323,7 +324,7 @@ export class TypeChecker {
     }
     
     // Handle dereferencing (*x)
-    if (expr.constructor.name === "DereferenceExprContext") {
+    if (expr.constructor.name === "ExprContext") {
       const operand = expr.expression();
       const operandType = this.inferType(operand, env);
       
