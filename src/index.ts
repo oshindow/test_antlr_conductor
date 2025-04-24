@@ -7,23 +7,74 @@ import { CompileVisitor } from "./CompilerVisitor.js";
 
 
 const input = `
-// let x = -2;
-// x = x + true;
+// operation precedence
+// let mut a = (17 < 20 - 4 && 10 == 4 + 1);
+// a; // Result: false
 
-// fn return_number() -> number {
-//     let x = 42;
+// 3 * (1 + 2);
+
+// "adads ad ad a ";
+
+// mutability errors
+// let a = 1;
+// a = a + 1 // Caught error: Cannot assign to immutable variable 'a'
+
+// let mut a = 1;
+// a = a + 1 // Result: 2
+
+// const a: number = 1;
+// a = a + 1 // Caught error: Cannot assign to immutable variable 'a'
+
+// type errors
+// const a: bool = 1; // Caught error: Type mismatch in const: expected bool, got number
+
+// let a; // Caught error: Cannot infer type for let-binding without expression or annotation
+
+struct User {
+    username: String,
+    email: String,
+    sign_in_count: number,
+    active: bool,
+}
+
+let user1 = User {
+    username: "xintong",
+    email: "xintong@example.com",
+    sign_in_count: 1,
+    active: true,
+};
+let user2 = User {
+    username: "xintong2",
+    email: "xintong@example.com",
+    sign_in_count: 1,
+    active: true,
+};
+user1.username; // xintong
+
+// // user1.username = "xintong2"; // Caught error: Cannot assign to immutable variable 'user1.username'
+// // user1.username
+
+// let mut a = 5;
+// let mut b = 10;
+// fn return_number(mut x: number) -> number {
+//     // let mut x = 42;
 //     x = x + 1;
-//     true
+//     x
+    
 //     // return x;
 // }
-// return_number();
+// return_number(b);
+// b;
 
-// fn return_number() -> undefined{
-//     let x = 42;
-//     x = x + 1;
+// let mut x = 2;
+// fn test() {
+//     let mut x = 1;
+//     return x + 1;
 // }
-// return_number();
+     
+// test();
 
+// test cases end here.
  
 // fn returns_unit() {
 //     // no return
@@ -143,25 +194,25 @@ const input = `
 // } 
 // x;
 
-enum Color {
-    Red,
-    Green,
-    Blue,
-}
+// enum Color {
+//     Red,
+//     Green,
+//     Blue,
+// }
 
-struct Point {
-    x: i32,
-    y: i32,
-}
+// struct Point {
+//     x: i32,
+//     y: i32,
+// }
 
-struct Rectangle {
-    top_left: Point,
-    width: i32,
-    height: i32,
-}
+// struct Rectangle {
+//     top_left: Point,
+//     width: i32,
+//     height: i32,
+// }
 
-let c = Color::Red; // Correct type annotation
-c; // Accessing field of struct
+// let c = Color::Red; // Correct type annotation
+// c; // Accessing field of struct
 `;
 
 const inputStream = CharStream.fromString(input);

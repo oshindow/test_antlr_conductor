@@ -6,6 +6,7 @@ import { AbstractParseTreeVisitor } from "antlr4ng";
 import { StartContext } from "./rustParser.js";
 import { StatementContext } from "./rustParser.js";
 import { Let_stmtContext } from "./rustParser.js";
+import { Const_stmtContext } from "./rustParser.js";
 import { Assign_stmtContext } from "./rustParser.js";
 import { DerefLhsContext } from "./rustParser.js";
 import { IdentLhsContext } from "./rustParser.js";
@@ -29,45 +30,36 @@ import { SimpleVariantContext } from "./rustParser.js";
 import { StructVariantContext } from "./rustParser.js";
 import { While_stmtContext } from "./rustParser.js";
 import { If_stmtContext } from "./rustParser.js";
-import { DereferenceContext } from "./rustParser.js";
-import { EnumStructInitContext } from "./rustParser.js";
-import { ModContext } from "./rustParser.js";
+import { ExpressionContext } from "./rustParser.js";
+import { Logical_or_exprContext } from "./rustParser.js";
+import { Logical_and_exprContext } from "./rustParser.js";
+import { Equality_exprContext } from "./rustParser.js";
+import { Relational_exprContext } from "./rustParser.js";
+import { Additive_exprContext } from "./rustParser.js";
+import { Multiplicative_exprContext } from "./rustParser.js";
+import { Unary_exprContext } from "./rustParser.js";
+import { Postfix_exprContext } from "./rustParser.js";
 import { FieldAccessContext } from "./rustParser.js";
-import { VariableReferenceContext } from "./rustParser.js";
+import { EnumAccessContext } from "./rustParser.js";
+import { FunctionCallContext } from "./rustParser.js";
+import { EnumStructInitContext } from "./rustParser.js";
+import { ParenExprContext } from "./rustParser.js";
+import { StructInitContext } from "./rustParser.js";
 import { MatchExprContext } from "./rustParser.js";
+import { VariableReferenceContext } from "./rustParser.js";
 import { SimpleContext } from "./rustParser.js";
 import { BoolLiteralContext } from "./rustParser.js";
-import { ParenExprContext } from "./rustParser.js";
-import { LessThanContext } from "./rustParser.js";
-import { RefMutExprContext } from "./rustParser.js";
-import { DivideContext } from "./rustParser.js";
-import { BlockExprContext } from "./rustParser.js";
-import { EnumAccessContext } from "./rustParser.js";
-import { MultiplyContext } from "./rustParser.js";
-import { GreaterThanContext } from "./rustParser.js";
-import { AddContext } from "./rustParser.js";
-import { LogicalNotContext } from "./rustParser.js";
-import { SubtractContext } from "./rustParser.js";
-import { LogicalAndContext } from "./rustParser.js";
-import { NotEqualContext } from "./rustParser.js";
-import { EqualContext } from "./rustParser.js";
-import { StructInitContext } from "./rustParser.js";
 import { StringLiteralContext } from "./rustParser.js";
-import { RefExprContext } from "./rustParser.js";
-import { FunctionCallContext } from "./rustParser.js";
-import { UnaryMinusContext } from "./rustParser.js";
-import { GreaterEqualContext } from "./rustParser.js";
-import { LessEqualContext } from "./rustParser.js";
-import { LogicalOrContext } from "./rustParser.js";
 import { PrintlnMacroContext } from "./rustParser.js";
+import { BlockExprContext } from "./rustParser.js";
 import { TyContext } from "./rustParser.js";
-import { IdentifierContext } from "./rustParser.js";
 import { Argument_listContext } from "./rustParser.js";
 import { NumberContext } from "./rustParser.js";
 import { Match_arm_listContext } from "./rustParser.js";
 import { Match_armContext } from "./rustParser.js";
 import { Match_patternContext } from "./rustParser.js";
 import { Pattern_listContext } from "./rustParser.js";
+import { IdentifierContext } from "./rustParser.js";
 
 
 /**
@@ -96,6 +88,12 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitLet_stmt?: (ctx: Let_stmtContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.const_stmt`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitConst_stmt?: (ctx: Const_stmtContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.assign_stmt`.
      * @param ctx the parse tree
@@ -239,234 +237,156 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      */
     visitIf_stmt?: (ctx: If_stmtContext) => Result;
     /**
-     * Visit a parse tree produced by the `dereference`
-     * labeled alternative in `rustParser.expression`.
+     * Visit a parse tree produced by `rustParser.expression`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitDereference?: (ctx: DereferenceContext) => Result;
+    visitExpression?: (ctx: ExpressionContext) => Result;
     /**
-     * Visit a parse tree produced by the `enumStructInit`
-     * labeled alternative in `rustParser.expression`.
+     * Visit a parse tree produced by `rustParser.logical_or_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitEnumStructInit?: (ctx: EnumStructInitContext) => Result;
+    visitLogical_or_expr?: (ctx: Logical_or_exprContext) => Result;
     /**
-     * Visit a parse tree produced by the `mod`
-     * labeled alternative in `rustParser.expression`.
+     * Visit a parse tree produced by `rustParser.logical_and_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitMod?: (ctx: ModContext) => Result;
+    visitLogical_and_expr?: (ctx: Logical_and_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.equality_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEquality_expr?: (ctx: Equality_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.relational_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitRelational_expr?: (ctx: Relational_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.additive_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitAdditive_expr?: (ctx: Additive_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.multiplicative_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitMultiplicative_expr?: (ctx: Multiplicative_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.unary_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitUnary_expr?: (ctx: Unary_exprContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.postfix_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitPostfix_expr?: (ctx: Postfix_exprContext) => Result;
     /**
      * Visit a parse tree produced by the `fieldAccess`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.postfix_op`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitFieldAccess?: (ctx: FieldAccessContext) => Result;
     /**
-     * Visit a parse tree produced by the `variableReference`
-     * labeled alternative in `rustParser.expression`.
+     * Visit a parse tree produced by the `enumAccess`
+     * labeled alternative in `rustParser.postfix_op`.
      * @param ctx the parse tree
      * @return the visitor result
      */
-    visitVariableReference?: (ctx: VariableReferenceContext) => Result;
+    visitEnumAccess?: (ctx: EnumAccessContext) => Result;
+    /**
+     * Visit a parse tree produced by the `functionCall`
+     * labeled alternative in `rustParser.postfix_op`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitFunctionCall?: (ctx: FunctionCallContext) => Result;
+    /**
+     * Visit a parse tree produced by the `enumStructInit`
+     * labeled alternative in `rustParser.postfix_op`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitEnumStructInit?: (ctx: EnumStructInitContext) => Result;
+    /**
+     * Visit a parse tree produced by the `parenExpr`
+     * labeled alternative in `rustParser.primary_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitParenExpr?: (ctx: ParenExprContext) => Result;
+    /**
+     * Visit a parse tree produced by the `structInit`
+     * labeled alternative in `rustParser.primary_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitStructInit?: (ctx: StructInitContext) => Result;
     /**
      * Visit a parse tree produced by the `matchExpr`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.primary_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitMatchExpr?: (ctx: MatchExprContext) => Result;
     /**
+     * Visit a parse tree produced by the `variableReference`
+     * labeled alternative in `rustParser.primary_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitVariableReference?: (ctx: VariableReferenceContext) => Result;
+    /**
      * Visit a parse tree produced by the `simple`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.primary_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitSimple?: (ctx: SimpleContext) => Result;
     /**
      * Visit a parse tree produced by the `boolLiteral`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.primary_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitBoolLiteral?: (ctx: BoolLiteralContext) => Result;
     /**
-     * Visit a parse tree produced by the `parenExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitParenExpr?: (ctx: ParenExprContext) => Result;
-    /**
-     * Visit a parse tree produced by the `lessThan`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitLessThan?: (ctx: LessThanContext) => Result;
-    /**
-     * Visit a parse tree produced by the `refMutExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitRefMutExpr?: (ctx: RefMutExprContext) => Result;
-    /**
-     * Visit a parse tree produced by the `divide`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitDivide?: (ctx: DivideContext) => Result;
-    /**
-     * Visit a parse tree produced by the `blockExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitBlockExpr?: (ctx: BlockExprContext) => Result;
-    /**
-     * Visit a parse tree produced by the `enumAccess`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitEnumAccess?: (ctx: EnumAccessContext) => Result;
-    /**
-     * Visit a parse tree produced by the `multiply`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitMultiply?: (ctx: MultiplyContext) => Result;
-    /**
-     * Visit a parse tree produced by the `greaterThan`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitGreaterThan?: (ctx: GreaterThanContext) => Result;
-    /**
-     * Visit a parse tree produced by the `add`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitAdd?: (ctx: AddContext) => Result;
-    /**
-     * Visit a parse tree produced by the `logicalNot`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitLogicalNot?: (ctx: LogicalNotContext) => Result;
-    /**
-     * Visit a parse tree produced by the `subtract`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitSubtract?: (ctx: SubtractContext) => Result;
-    /**
-     * Visit a parse tree produced by the `logicalAnd`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitLogicalAnd?: (ctx: LogicalAndContext) => Result;
-    /**
-     * Visit a parse tree produced by the `notEqual`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitNotEqual?: (ctx: NotEqualContext) => Result;
-    /**
-     * Visit a parse tree produced by the `equal`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitEqual?: (ctx: EqualContext) => Result;
-    /**
-     * Visit a parse tree produced by the `structInit`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitStructInit?: (ctx: StructInitContext) => Result;
-    /**
      * Visit a parse tree produced by the `stringLiteral`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.primary_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitStringLiteral?: (ctx: StringLiteralContext) => Result;
     /**
-     * Visit a parse tree produced by the `refExpr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitRefExpr?: (ctx: RefExprContext) => Result;
-    /**
-     * Visit a parse tree produced by the `functionCall`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitFunctionCall?: (ctx: FunctionCallContext) => Result;
-    /**
-     * Visit a parse tree produced by the `unaryMinus`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitUnaryMinus?: (ctx: UnaryMinusContext) => Result;
-    /**
-     * Visit a parse tree produced by the `greaterEqual`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitGreaterEqual?: (ctx: GreaterEqualContext) => Result;
-    /**
-     * Visit a parse tree produced by the `lessEqual`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitLessEqual?: (ctx: LessEqualContext) => Result;
-    /**
-     * Visit a parse tree produced by the `logicalOr`
-     * labeled alternative in `rustParser.expression`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitLogicalOr?: (ctx: LogicalOrContext) => Result;
-    /**
      * Visit a parse tree produced by the `printlnMacro`
-     * labeled alternative in `rustParser.expression`.
+     * labeled alternative in `rustParser.primary_expr`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitPrintlnMacro?: (ctx: PrintlnMacroContext) => Result;
+    /**
+     * Visit a parse tree produced by the `blockExpr`
+     * labeled alternative in `rustParser.primary_expr`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitBlockExpr?: (ctx: BlockExprContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.ty`.
      * @param ctx the parse tree
      * @return the visitor result
      */
     visitTy?: (ctx: TyContext) => Result;
-    /**
-     * Visit a parse tree produced by `rustParser.identifier`.
-     * @param ctx the parse tree
-     * @return the visitor result
-     */
-    visitIdentifier?: (ctx: IdentifierContext) => Result;
     /**
      * Visit a parse tree produced by `rustParser.argument_list`.
      * @param ctx the parse tree
@@ -503,5 +423,11 @@ export class rustVisitor<Result> extends AbstractParseTreeVisitor<Result> {
      * @return the visitor result
      */
     visitPattern_list?: (ctx: Pattern_listContext) => Result;
+    /**
+     * Visit a parse tree produced by `rustParser.identifier`.
+     * @param ctx the parse tree
+     * @return the visitor result
+     */
+    visitIdentifier?: (ctx: IdentifierContext) => Result;
 }
 

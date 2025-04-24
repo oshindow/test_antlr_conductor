@@ -7,6 +7,7 @@ start:
 
 statement:
     let_stmt ';'?
+    | const_stmt ';'?
     | assign_stmt ';'?
     | return_stmt ';'?
     | expression_stmt ';'
@@ -23,6 +24,10 @@ statement:
 
 let_stmt: 
     'let' (MUT)? identifier (':' ty)? ('=' expression)?
+;
+
+const_stmt:
+    'const' identifier ':' ty '=' expression
 ;
 
 assign_stmt:
@@ -52,7 +57,7 @@ parameter_list:
 ;
 
 parameter:
-    identifier (':' ty)?  
+    (MUT)? identifier ':' ty  
 ;
 
 for_stmt:
@@ -112,39 +117,60 @@ if_stmt:
     'if' expression block (KW_ELSE (block | if_stmt))?
 ;
 
-
 expression
-    :'!' expression                 # logicalNot
-    | '-' expression                # unaryMinus
-    | '&' expression                # refExpr
-    | '&' MUT expression            # refMutExpr
-    | '*' expression                # dereference
-    | expression '&&' expression    # logicalAnd
-    | expression '||' expression    # logicalOr
-    | expression '==' expression   # equal
-    | expression '!=' expression   # notEqual
-    | expression '<' expression    # lessThan
-    | expression '<=' expression   # lessEqual
-    | expression '>' expression    # greaterThan
-    | expression '>=' expression   # greaterEqual
-    | expression '*' expression   # multiply
-    | expression '+' expression # add
-    | expression '-' expression # subtract
-    | expression '/' expression # divide
-    | expression '%' expression # mod
-    | LPAREN expression RPAREN  # parenExpr
-    | identifier                # variableReference
-    | number                    # simple
-    | BOOL               # boolLiteral
-    | STRING             # stringLiteral
-    | 'println!' LPAREN argument_list? RPAREN   # printlnMacro
-    | identifier LPAREN argument_list? RPAREN  # functionCall
-    | block                     # blockExpr
-    | identifier '{' field_init_list? '}'  # structInit
-    | expression '.' identifier              # fieldAccess
-    | identifier '::' identifier    # enumAccess
-    | 'match' expression '{' match_arm_list '}'   # matchExpr
-    | identifier '::' identifier '{' field_init_list? '}'    # enumStructInit
+    : logical_or_expr
+    ;
+
+logical_or_expr
+    : logical_and_expr ('||' logical_and_expr)*
+    ;
+
+logical_and_expr
+    : equality_expr ('&&' equality_expr)*
+    ;
+
+equality_expr
+    : relational_expr (('==' | '!=') relational_expr)*
+    ;
+
+relational_expr
+    : additive_expr (('<' | '<=' | '>' | '>=') additive_expr)*
+    ;
+
+additive_expr
+    : multiplicative_expr (('+' | '-') multiplicative_expr)*
+    ;
+
+multiplicative_expr
+    : unary_expr (('*' | '/' | '%') unary_expr)*
+    ;
+
+unary_expr
+    : ('!' | '-' | '&' | '&' MUT | '*') unary_expr
+    | postfix_expr
+    ;
+
+postfix_expr
+    : primary_expr postfix_op*
+    ;
+
+postfix_op
+    : '.' identifier                     # fieldAccess
+    | '::' identifier                    # enumAccess
+    | LPAREN argument_list? RPAREN      # functionCall
+    | '::' identifier '{' field_init_list? '}' # enumStructInit
+    ;
+
+primary_expr
+    : LPAREN expression RPAREN          # parenExpr
+    | identifier '{' field_init_list? '}' # structInit
+    | 'match' expression '{' match_arm_list '}' # matchExpr
+    | identifier                        # variableReference
+    | number                            # simple
+    | BOOL                              # boolLiteral
+    | STRING                            # stringLiteral
+    | 'println!' LPAREN argument_list? RPAREN # printlnMacro
+    | block                             # blockExpr
     ;
 
 MUT:
@@ -158,24 +184,10 @@ KW_ELSE:
 ty: 
     'number'
     | 'bool'
-    | 'char'
     | 'String' 
     | identifier
     ;
 
-STRING: '"' (~["\\] | '\\' .)*? '"'
-;
-
-BOOL: 'true' | 'false'
-;
-
-identifier: 
-    IDENTIFIER
-;
-
-IDENTIFIER:
-    [a-zA-Z_][a-zA-Z0-9_]*
-;
 
 argument_list:
     expression (',' expression)*
@@ -206,6 +218,20 @@ pattern_list:
 
 NUMBER:
     [0-9]+
+;
+
+BOOL: 'true' | 'false'
+;
+
+STRING: '"' (~["])*? '"'
+;
+
+identifier: 
+    IDENTIFIER
+;
+
+IDENTIFIER:
+    [a-zA-Z_][a-zA-Z0-9_]*
 ;
 
 LINE_COMMENT

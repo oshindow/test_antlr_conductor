@@ -1,12 +1,12 @@
 // Evaluator with cooperative concurrency support
-
+type ParamInfo = { name: string; mutable: boolean };
 export type Instruction =
   | { tag: 'LDC'; val: any }
   | { tag: 'LD'; sym: string }
   | { tag: 'ASSIGN'; sym: string }
   | { tag: 'BINOP'; sym: string }
   | { tag: 'UNARY'; sym: string }
-  | { tag: 'LDF'; prms: string[]; addr: number }
+  | { tag: 'LDF'; prms: ParamInfo[]; addr: number }
   | { tag: 'CALL'; arity: number }
   | { tag: 'TAIL_CALL'; arity: number }
   | { tag: 'RESET' }
@@ -24,8 +24,9 @@ export type Instruction =
   | { tag: 'REF'; sym: string } 
   | { tag: 'REFMUT'; sym: string } 
   | { tag: 'DEREF' } 
-  | { tag: 'DECL', sym: string }
-  | { tag: 'DEREF_ASSIGN' }; 
+  | { tag: 'DECL', sym: string, mutable: boolean }
+  | { tag: 'DEREF_ASSIGN' } 
+  | { tag: 'SETFIELD' }; // New instruction for field assignment
 
 interface ThreadContext {
   pc: number; // program counter
@@ -35,7 +36,7 @@ interface ThreadContext {
   timeBudget: number;
 }
 
-export class ConcurrentEvaluator {ev
+export class ConcurrentEvaluator {
   private readonly TIME_SLICE = 5;
   private threadQueue: ThreadContext[] = [];
   private nextThreadId = 0;
@@ -62,7 +63,11 @@ export class ConcurrentEvaluator {ev
 
           case 'LD': {
             const val = this.lookup(instr.sym);
-            this.activeThread.stack.push(val);
+            if (typeof val === 'object' && val.tag === 'CLOSURE') {
+              this.activeThread.stack.push(val);
+            } else {
+            this.activeThread.stack.push(val.value);
+            }
             this.advance();
             console.log("LD: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             break;
@@ -117,7 +122,13 @@ export class ConcurrentEvaluator {ev
             break;
         }
         
-
+          case 'DECL': {
+            const frame = this.activeThread!.env[this.activeThread!.env.length - 1];
+            frame[instr.sym] = { value: undefined, mutable: instr.mutable };
+            console.log("DECL: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
+            this.advance();
+            break;
+          }
           case 'ASSIGN': {
             const val = this.activeThread.stack[this.activeThread.stack.length - 1];
             this.assign(instr.sym, val);
@@ -204,7 +215,9 @@ export class ConcurrentEvaluator {ev
 
           case 'ENTER_SCOPE': {
             const frame: Record<string, any> = {};
-            for (const sym of instr.syms) frame[sym] = undefined;
+             
+            // for (const sym of instr.syms) frame[sym] = { value: undefined, mutable: false };
+            
             this.activeThread.env.unshift(frame);
             this.advance();
             console.log("ENTER_SCOPE: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
@@ -267,6 +280,24 @@ export class ConcurrentEvaluator {ev
             this.advance();
             break;
           }
+
+          case 'SETFIELD': {
+            const value = this.activeThread.stack.pop();
+            const key = this.activeThread.stack.pop();
+            const obj = this.activeThread.stack.pop();
+          
+            if (typeof obj !== 'object' || obj === null) {
+              throw new Error('SETFIELD expects a struct object');
+            }
+          
+            obj[key] = value;
+            this.activeThread.stack.push(obj);
+            console.log("SETFIELD: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
+            
+            this.advance();
+            break;
+          }
+          
             
         }
       }
@@ -293,26 +324,44 @@ export class ConcurrentEvaluator {ev
   private assign(sym: string, val: any): void {
     for (const frame of this.activeThread!.env) {
       if (sym in frame) {
-        frame[sym] = val;
-        return;
-      }
-       
-      if (typeof frame[sym] === 'object' && frame[sym] !== null) {
-        if (sym in frame[sym]) {
-          frame[sym][sym] = val;
+        // If it's a closure, assign directly
+        if (val && typeof val === 'object' && 'tag' in val && val.tag === 'CLOSURE') {
+          frame[sym] = val;
           return;
         }
+  
+        // Check mutability
+        if ("mutable" in frame[sym]) {
+          if (!frame[sym].mutable && frame[sym].value !== undefined) {
+            throw new Error(`Cannot assign to immutable variable '${sym}'`);
+          }
+          frame[sym].value = val;
+          return;
+        }
+  
+        // fallback: treat as a normal assignable
+        frame[sym] = { value: val, mutable: true };
+        return;
       }
     }
-    this.activeThread!.env[0][sym] = val;
+  
+    // If symbol not found in any frame, define in current frame
+    const topFrame = this.activeThread!.env[0];
+    if (val && typeof val === 'object' && 'tag' in val && val.tag === 'CLOSURE') {
+      topFrame[sym] = val;
+    } else {
+      topFrame[sym] = { value: val, mutable: true };
+    }
   }
   
+  
+  
 
-  private extend(prms: string[], args: any[], env: Record<string, any>[]): Record<string, any>[] {
+  private extend(prms: ParamInfo[], args: any[], env: Record<string, any>[]): Record<string, any>[] {
     console.log("Extending with params:", prms, "and args:", args);
     if (prms.length !== args.length) throw new Error("Arity mismatch");
     const frame: Record<string, any> = {};
-    for (let i = 0; i < prms.length; i++) frame[prms[i]] = args[i];
+    for (let i = 0; i < prms.length; i++) frame[prms[i].name] = {value: args[i], mutable: prms[i].mutable};
     return [frame, ...env];
   }
 

@@ -1,5 +1,7 @@
+import { execPath } from "process";
+
 // Type definitions with extensions for ownership
-interface EnumType {
+export interface EnumType {
     kind: 'enum';
     name: string;
     variants: {
@@ -7,7 +9,7 @@ interface EnumType {
     };
 }
   
-interface StructType {
+export interface StructType {
     kind: 'struct';
     name: string;
     fields: {
@@ -15,7 +17,7 @@ interface StructType {
     };
 }
 
-export type BaseType = "number" | "bool" | "undefined" | "string" | "void" | "i32" | "i64" | "f32" | "f64" | "char" | "u8" | "u16" | "u32" | "u64";
+export type BaseType = "number" | "bool" | "undefined" | "String" | "void" | "i32" | "i64" | "f32" | "f64" | "char" | "u8" | "u16" | "u32" | "u64" | undefined;
 export type RefType = { kind: "ref", mutable: boolean, base: Type, lifetime: string };
 export type FnType = { kind: "fn", params: Type[], return: Type };
 type ArrayType = { kind: "array", element: Type };
@@ -79,6 +81,28 @@ function isStructType(type: Type): type is StructType {
 function isCompositeType(type: Type): boolean {
     return isEnumType(type) || isStructType(type);
 }
+
+function isVariableReference(expr: any) {
+  if (!expr) return false;
+
+  // If it's the target context
+  if (expr.constructor?.name === "VariableReferenceContext") {
+    return expr;
+  }
+
+  // If it's a nested expression wrapper, recurse on its only child
+  if (
+    expr.constructor?.name?.endsWith("Context") &&
+    Array.isArray(expr.children) &&
+    expr.children.length === 1
+  ) {
+    return isVariableReference(expr.children[0]);
+  }
+
+  // Otherwise, not a variable reference
+  return false;
+}
+
 
 export function isRefType(type: Type): type is RefType {
   return typeof type === "object" && type !== null && "kind" in type && type.kind === "ref";
@@ -165,12 +189,12 @@ export class TypeChecker {
   
   lookupType(env: TypeEnv, sym: string): Type {
     const state = this.lookupTypeState(env, sym);
-    
+    console.log("state", state, "sym", sym)
     // Check if the value has been moved
     if (state.ownership.kind === "moved") {
       throw new Error(`Use of moved value: ${sym}`);
     }
-    
+    // console.log(state.type, sym)
     return state.type;
   }
   
@@ -360,26 +384,11 @@ export class TypeChecker {
   }
 
   // Register a struct definition in the environment
-  registerStruct(env: TypeEnv, structCtx: any): void {
-    const name = structCtx.identifier().IDENTIFIER().getText();
-    const fields: {[field: string]: Type} = {};
-    
-    // Process each field
-    const fieldCtxs = structCtx.struct_field();
-    for (const fieldCtx of fieldCtxs) {
-      const fieldName = fieldCtx.identifier().IDENTIFIER().getText();
-      
-      // Check for duplicate field names
-      if (fields[fieldName]) {
-        throw new Error(`Duplicate field name ${fieldName} in struct ${name}`);
-      }
-      
-      const fieldType = this.parseTypeAnnotation(fieldCtx.ty(), env);
-      fields[fieldName] = fieldType;
-    }
-    
+  registerStruct(env: TypeEnv, name: string, fields: any): void {
     const structType = this.createStructType(name, fields);
+    console.log("structType", structType)
     this.assignType(env, name, structType);
+    console.log("end assignType", env)
   }
 
   parseTypeAnnotation(tyCtx: any, env: TypeEnv): Type {
@@ -418,68 +427,9 @@ export class TypeChecker {
   }
 
   inferType(expr: any, env: TypeEnv): Type {
-    // Handle literals
-    if (expr.constructor.name === "SimpleContext") {
-      return "number";
+    if (!expr || typeof expr !== 'object' || !expr.constructor?.name) {
+      throw new Error(`Invalid expression node: ${JSON.stringify(expr)}`);
     }
-  
-    if (expr.constructor.name === "BoolLiteralContext") {
-      return "bool";
-    }
-
-    if (expr.constructor.name === "StringLiteralContext") {
-      return "string";
-    }
-  
-    // Handle variable references
-    if (expr.constructor.name === "VariableReferenceContext") {
-      const name = expr.identifier().IDENTIFIER().getText();
-      return this.lookupType(env, name);
-    }
-    
-    // Handle references (&x or &mut x)
-    if (expr.constructor.name === "RefExprContext" || 
-        expr.constructor.name === "RefMutExprContext") {
-      const target = expr.expression();
-      const isMut = expr.constructor.name === "RefMutExprContext";
-      
-      if (target.constructor.name === "VariableReferenceContext") {
-        const name = target.identifier().IDENTIFIER().getText();
-        const targetType = this.lookupType(env, name);
-        
-        // Generate a unique borrower ID for this reference
-        const borrowerId = `ref_${freshLifetime()}`;
-        
-        // Apply borrowing rules
-        if (isMut) {
-          this.borrowMut(env, name, borrowerId);
-        } else {
-          this.borrowImmut(env, name, borrowerId);
-        }
-        
-        return this.createRefType(targetType, isMut);
-      } else {
-        throw new Error("Can only take references to variables");
-      }
-    }
-    
-    // Handle dereferencing (*x)
-    if (expr.constructor.name === "ExprContext") {
-      const operand = expr.expression();
-      const operandType = this.inferType(operand, env);
-      
-      if (!isRefType(operandType)) {
-        throw new Error("Cannot dereference a non-reference type");
-      }
-      
-      // Check if the reference is valid
-      if (!this.isLifetimeValid(operandType.lifetime)) {
-        throw new Error("Attempt to dereference an invalid reference");
-      }
-      
-      return operandType.base;
-    }
-    
     // Handle binary operators
     const bin = (opText: string, left: any, right: any): Type => {
       const op = builtInTypes[opText];
@@ -507,25 +457,464 @@ export class TypeChecker {
       
       return op.return;
     };
-  
-    // Binary operators
-    if (expr.constructor.name === "AddContext") return bin("+", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "SubtractContext") return bin("-", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "MultiplyContext") return bin("*", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "DivideContext") return bin("/", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "EqualContext") return bin("==", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "NotEqualContext") return bin("!=", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "LessThanContext") return bin("<", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "GreaterThanContext") return bin(">", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "LessEqualContext") return bin("<=", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "GreaterEqualContext") return bin(">=", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "LogicalAndContext") return bin("&&", expr.expression(0), expr.expression(1));
-    if (expr.constructor.name === "LogicalOrContext") return bin("||", expr.expression(0), expr.expression(1));
-    
-    // Unary operators
-    if (expr.constructor.name === "LogicalNotContext") return un("!", expr.expression());
-    if (expr.constructor.name === "UnaryMinusContext") return un("-unary", expr.expression());
 
+    // Entry point
+    if (expr.constructor.name === "ExpressionContext") {
+        // console.log("infered ExpressionContext")
+        return this.inferType(expr.logical_or_expr(), env);
+    }
+    if (expr.constructor.name === "Logical_or_exprContext") {
+        // console.log("infered Logical_or_exprContext")
+        const children = expr.logical_and_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          acc = bin("||", children[i - 1], children[i]);  
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Logical_and_exprContext") {
+        // handle `&&`
+        // console.log("infered Logical_and_exprContext")
+        const children = expr.equality_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          acc = bin("&&", children[i - 1], children[i]);
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Equality_exprContext") {
+        // handle `==` / `!=`
+        // console.log("infered Equality_exprContext")
+        const children = expr.relational_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          const op = expr.getChild(2 * i - 1).getText(); // e.g. '==' or '!='
+          acc = bin(op, children[i - 1], children[i]);
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Relational_exprContext") {
+        // handle <, <=, etc.
+        // console.log("infered Relational_exprContext")
+        const children = expr.additive_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          const op = expr.getChild(2 * i - 1).getText(); // '<', '<='...
+          acc = bin(op, children[i - 1], children[i]);
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Additive_exprContext") {
+        // handle +, -
+        // console.log("infered Additive_exprContext")
+        const children = expr.multiplicative_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          const op = expr.getChild(2 * i - 1).getText(); // '+' or '-'
+          acc = bin(op, children[i - 1], children[i]);
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Multiplicative_exprContext") {
+        // handle *, / 
+        // console.log("infered Multiplicative_exprContext")
+        const children = expr.unary_expr();
+        let acc = this.inferType(children[0], env);
+        for (let i = 1; i < children.length; i++) {
+          const op = expr.getChild(2 * i - 1).getText(); // '*', '/' 
+          acc = bin(op, children[i - 1], children[i]);
+        }
+        return acc;
+    }
+    if (expr.constructor.name === "Unary_exprContext") {
+        // handle !, -, *, &, &mut
+        // console.log("infered Unary_exprContext")
+        // )
+        if (expr.getChildCount() === 1) {
+          return this.inferType(expr.postfix_expr(), env);
+        }
+        const op = expr.getChild(0).getText(); 
+        const operand = expr.unary_expr?.() || expr.postfix_expr();
+        
+         
+        if (op === '!') {
+          return un('!', operand);
+        }
+      
+        if (op === '-') {
+          return un('-unary', operand);
+        }
+
+        // Handle references (&x or &mut x)
+        if (op.constructor.name === "RefExprContext" || 
+            op.constructor.name === "RefMutExprContext") {
+            const target = op.expression();
+            const isMut = op.constructor.name === "RefMutExprContext";
+            
+            if (target.constructor.name === "VariableReferenceContext") {
+              // console.log("infered VariableReferenceContext in RefExprContext or RefMutExprContext")
+              const name = target.identifier().IDENTIFIER().getText();
+              const targetType = this.lookupType(env, name);
+              console.log("targetType", targetType, name)
+              // Generate a unique borrower ID for this reference
+              const borrowerId = `ref_${freshLifetime()}`;
+              console.log(borrowerId)
+              // Apply borrowing rules
+              if (isMut) {
+                this.borrowMut(env, name, borrowerId);
+              } else {
+                this.borrowImmut(env, name, borrowerId);
+              }
+              console.log(isMut, env, name, borrowerId)
+              return this.createRefType(targetType, isMut);
+            } else {
+              throw new Error("Can only take references to variables");
+            }
+        }
+      
+      // Handle dereferencing (*x)
+      if (op.constructor.name === "ExprContext") {
+        const operand = op.expression();
+        const operandType = this.inferType(operand, env);
+        
+        if (!isRefType(operandType)) {
+          throw new Error("Cannot dereference a non-reference type");
+        }
+        
+        // Check if the reference is valid
+        if (!this.isLifetimeValid(operandType.lifetime)) {
+          throw new Error("Attempt to dereference an invalid reference");
+        }
+        
+        return operandType.base;
+      }
+    }
+      // return base
+    // }
+    if (expr.constructor.name === "Postfix_exprContext") {
+      // handle primary_expr + postfix_op*
+      // console.log("infered Postfix_exprContext")
+      // console.log(expr.getChildCount())
+      // if (expr.getChildCount() === 1) {
+      //   return this.inferType(expr.primary_expr(), env);
+      // }
+      
+      const primaryType = this.inferType(expr.primary_expr(), env);  
+      // let resultType = primaryType;
+      // console.log(primaryType)
+      const name = expr.primary_expr().getText();
+      const ops = expr.postfix_op();
+      // console.log(ops)   
+      for (const op of ops) {
+            // Function calls
+            // console.log(op.constructor.name)
+          if (op.constructor.name === "FunctionCallContext") {
+            // console.log("infered FunctionCallContext")
+            // const name = op.identifier().IDENTIFIER().getText();
+            const fnType = builtInTypes[name] || this.lookupType(env, name);
+            // console.log("fnType:", fnType);
+            
+            if (!isFnType(fnType)) {
+              throw new Error(`${name} is not callable`);
+            }
+            
+            const args = op.argument_list()?.expression() || [];
+            // console.log("args", args.length)
+            const argTypes: Type[] = [];
+            
+            // Process each argument and handle moving/borrowing
+            for (let i = 0; i < args.length; i++) {
+              // console.log("here")
+              const argType = this.inferType(args[i], env);
+              argTypes.push(argType);
+              // console.log("args[i]", args[i])
+              
+              // If passing a variable directly, check for move semantics
+              const argName = isVariableReference(args[i])
+              if (argName) {
+                console.log("infered VariableReferenceContext in FunctionCallContext")
+                // const argName = args[i].identifier().IDENTIFIER().getText();
+                const paramType = fnType.params[i];
+                // console.log("paramType", paramType, "argName", argName)
+                // If parameter type is not a reference, we're moving the value
+                if (!isRefType(paramType) && !isBaseType(argType)) {
+                  this.moveValue(env, argName);
+                }
+              }
+            }
+            
+            // Check argument count
+            if (argTypes.length !== fnType.params.length) {
+              throw new Error(`Function ${name} expects ${fnType.params.length} arguments, got ${argTypes.length}`);
+            }
+            
+            // Check argument types
+            for (let i = 0; i < argTypes.length; i++) {
+              const paramType = fnType.params[i];
+              const argType = argTypes[i];
+              
+              // Handle reference vs. value types differently
+              if (isRefType(paramType) && isRefType(argType)) {
+                // Reference compatibility
+                if (paramType.mutable && !argType.mutable) {
+                  throw new Error(`Cannot pass immutable reference as mutable reference`);
+                }
+                
+                // Check base type compatibility
+                if (JSON.stringify(paramType.base) !== JSON.stringify(argType.base)) {
+                  throw new Error(`Reference type mismatch: expected &${paramType.mutable ? 'mut ' : ''}${paramType.base}, got &${argType.mutable ? 'mut ' : ''}${argType.base}`);
+                }
+                
+                // Check lifetime validity
+                if (!this.isLifetimeValid(argType.lifetime)) {
+                  throw new Error(`Reference passed to function has expired`);
+                }
+              } else if (!isRefType(paramType) && !isRefType(argType)) {
+                // Value type compatibility
+                if (JSON.stringify(paramType) !== JSON.stringify(argType)) {
+                  throw new Error(`Type mismatch: expected ${paramType}, got ${argType}`);
+                }
+              } else {
+                throw new Error(`Cannot pass ${argType} as ${paramType}`);
+              }
+            }
+            
+            return fnType.return;
+          }
+
+          // Handle field access
+          if (op.constructor.name === "FieldAccessContext") {
+            // const obj = op.identifier();
+            const fieldName = op.identifier().IDENTIFIER().getText();
+            const objType = primaryType
+        
+            if (isStructType(objType)) {
+            const fieldType = objType.fields[fieldName];
+            if (!fieldType) {
+                throw new Error(`Field ${fieldName} does not exist in struct ${objType.name}`);
+            }
+            return fieldType;
+            }
+        
+            if (isRefType(objType) && isStructType(objType.base)) {
+            const fieldType = objType.base.fields[fieldName];
+            if (!fieldType) {
+                throw new Error(`Field ${fieldName} does not exist in struct ${objType.base.name}`);
+            }
+            return this.createRefType(fieldType, objType.mutable);
+            }
+        
+            throw new Error(`Cannot access field ${fieldName} on non-struct type ${JSON.stringify(objType)}`);
+          }
+
+          // Handle enum variant access without data (e.g., Book::Papery)
+          if (op.constructor.name === "EnumAccessContext") {
+              const enumName = op.identifier(0).IDENTIFIER().getText();
+              const variantName = op.identifier(1).IDENTIFIER().getText();
+          
+              const enumType = this.lookupType(env, enumName);
+              if (!isEnumType(enumType)) {
+              throw new Error(`${enumName} is not an enum`);
+              }
+          
+              const variantType = enumType.variants[variantName];
+              if (variantType === undefined) {
+              throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+              }
+          
+              // If the variant has an associated type, accessing it like this is invalid.
+              if (variantType !== null) {
+              throw new Error(`Enum variant ${enumName}::${variantName} requires associated data`);
+              }
+          
+              return enumType;
+          }
+
+          // Handle enum variant instantiation
+          if (op.constructor.name === "EnumStructInitContext") {
+            const enumName = op.identifier(0).IDENTIFIER().getText();
+            const variantName = op.identifier(1).IDENTIFIER().getText();
+        
+            const enumType = this.lookupType(env, enumName);
+            if (!isEnumType(enumType)) {
+            throw new Error(`${enumName} is not an enum`);
+            }
+        
+            const variantType = enumType.variants[variantName];
+            if (variantType === undefined) {
+            throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+            }
+        
+            const variantExpr = op.expression();
+            if (variantType !== null) {
+            if (!variantExpr) {
+                throw new Error(`Variant ${enumName}::${variantName} requires data`);
+            }
+        
+            const dataType = this.inferType(variantExpr, env);
+        
+            if (JSON.stringify(variantType) !== JSON.stringify(dataType)) {
+                throw new Error(`Type mismatch in enum variant: expected ${JSON.stringify(variantType)}, got ${JSON.stringify(dataType)}`);
+            }
+        
+            if (op.constructor.name === "VariableReferenceContext" && !isBaseType(dataType) && !isRefType(dataType)) {
+                const varName = variantExpr.identifier().IDENTIFIER().getText();
+                this.moveValue(env, varName);
+            }
+            } else if (variantExpr) {
+            throw new Error(`Variant ${enumName}::${variantName} does not take data`);
+            }
+        
+            return enumType;
+        }
+        }
+
+    return primaryType
+        
+    }
+    // if (expr.constructor.name === "Primary_exprContext") {
+    //   console.log("infered Primary_exprContext")
+      
+    //   for (let i = 1; i < expr.getChildCount(); i++) {
+    //     const op = expr.getChild(i);
+        // Handle literals
+      if (expr.constructor.name === "SimpleContext") {
+        // console.log("infered SimpleContext")
+        return "number";
+      }
+    
+      if (expr.constructor.name === "BoolLiteralContext") {
+        // console.log("infered BoolLiteralContext")
+        return "bool";
+      }
+
+      if (expr.constructor.name === "StringLiteralContext") {
+        // console.log("infered StringLiteralContext")
+        return "String";
+      }
+      if (expr.constructor.name === "ParenExprContext") {
+        // console.log("infered ParenExprContext", expr.expression().constructor.name)
+        return this.inferType(expr.expression(), env);
+      }
+      
+      // Handle variable references
+      if (expr.constructor.name === "VariableReferenceContext") {
+        
+        const name = expr.identifier().IDENTIFIER().getText();
+        // console.log("infered VariableReferenceContext", name, env)
+        return this.lookupType(env, name);
+      }
+
+        // Handle struct literals
+        if (expr.constructor.name === "StructInitContext") {
+          // console.log()
+          const typeName = expr.identifier().IDENTIFIER().getText();
+          const structType = this.lookupType(env, typeName);
+      
+          if (!isStructType(structType)) {
+          throw new Error(`${typeName} is not a struct`);
+          }
+      
+          const initializedFields = new Set<string>();
+          const fields = expr.field_init_list()?.field_init() ?? [];
+          for (const field of fields) {
+          const fieldName = field.identifier().IDENTIFIER().getText();
+          const expectedType = structType.fields[fieldName];
+            
+          if (!expectedType) {
+              throw new Error(`Field ${fieldName} does not exist in struct ${typeName}`);
+          }
+          if (initializedFields.has(fieldName)) {
+              throw new Error(`Duplicate initialization of field ${fieldName}`);
+          }
+          initializedFields.add(fieldName);
+      
+          const fieldExpr = field.expression();
+          const actualType = this.inferType(fieldExpr, env);
+      
+          if (JSON.stringify(expectedType) !== JSON.stringify(actualType)) {
+              throw new Error(`Type mismatch in field ${fieldName}: expected ${JSON.stringify(expectedType)}, got ${JSON.stringify(actualType)}`);
+          }
+      
+          if (expr.constructor.name === "VariableReferenceContext" && !isBaseType(actualType) && !isRefType(actualType)) {
+              const varName = fieldExpr.identifier().IDENTIFIER().getText();
+              this.moveValue(env, varName);
+          }
+          }
+      
+          for (const fieldName in structType.fields) {
+          if (!initializedFields.has(fieldName)) {
+              throw new Error(`Field ${fieldName} is not initialized in struct ${typeName}`);
+          }
+          }
+      
+          return structType;
+      }
+
+
+    // Handle match expressions
+    if (expr.constructor.name === "MatchExprContext") {
+      const scrutinee = expr.expression();
+      const scrutineeType = this.inferType(scrutinee, env);
+  
+      if (!isEnumType(scrutineeType)) {
+      throw new Error(`Match expression requires an enum type, got ${JSON.stringify(scrutineeType)}`);
+      }
+  
+      const arms = expr.match_arm();
+      const coveredVariants = new Set<string>();
+      const armTypes: Type[] = [];
+  
+      for (const arm of arms) {
+      const pattern = arm.match_pattern();
+      const [enumIdent, variantIdent, bindingIdent] = pattern.identifier();
+      const enumName = enumIdent.IDENTIFIER().getText();
+      const variantName = variantIdent.IDENTIFIER().getText();
+  
+      if (enumName !== scrutineeType.name) {
+          throw new Error(`Pattern refers to enum ${enumName}, but scrutinee is of type ${scrutineeType.name}`);
+      }
+  
+      const variantType = scrutineeType.variants[variantName];
+      if (variantType === undefined) {
+          throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+      }
+  
+      if (coveredVariants.has(variantName)) {
+          throw new Error(`Duplicate pattern for variant ${variantName}`);
+      }
+      coveredVariants.add(variantName);
+  
+      this.enterScope();
+      if (bindingIdent && variantType !== null) {
+          const bindingName = bindingIdent.IDENTIFIER().getText();
+          this.assignType(env, bindingName, variantType);
+      }
+  
+      const armType = this.inferType(arm.expression(), env);
+      armTypes.push(armType);
+  
+      this.exitScope();
+      }
+  
+      for (const variant in scrutineeType.variants) {
+      if (!coveredVariants.has(variant)) {
+          throw new Error(`Match expression does not cover variant ${variant}`);
+      }
+      }
+  
+      const firstType = armTypes[0];
+      for (const t of armTypes) {
+      if (JSON.stringify(t) !== JSON.stringify(firstType)) {
+          throw new Error(`Match arms have different types: ${JSON.stringify(firstType)} and ${JSON.stringify(t)}`);
+      }
+      }
+  
+      return firstType;
+      }
+    // }
+
+  // }
     // Handle if-else expressions
     if (expr.constructor.name === "IfExprContext") {
         const condType = this.inferType(expr.expression(0), env);
@@ -575,269 +964,6 @@ export class TypeChecker {
         this.inferType(expr.block(), env); // Evaluate block for side effects and type safety
         this.exitScope();
         return "undefined"; // `for` loops do not return a value
-    }
-
-    
-    // Handle struct literals
-    if (expr.constructor.name === "StructInitContext") {
-        const typeName = expr.identifier().IDENTIFIER().getText();
-        const structType = this.lookupType(env, typeName);
-    
-        if (!isStructType(structType)) {
-        throw new Error(`${typeName} is not a struct`);
-        }
-    
-        const initializedFields = new Set<string>();
-    
-        for (const field of expr.struct_field_init()) {
-        const fieldName = field.identifier().IDENTIFIER().getText();
-        const expectedType = structType.fields[fieldName];
-    
-        if (!expectedType) {
-            throw new Error(`Field ${fieldName} does not exist in struct ${typeName}`);
-        }
-        if (initializedFields.has(fieldName)) {
-            throw new Error(`Duplicate initialization of field ${fieldName}`);
-        }
-        initializedFields.add(fieldName);
-    
-        const fieldExpr = field.expression();
-        const actualType = this.inferType(fieldExpr, env);
-    
-        if (JSON.stringify(expectedType) !== JSON.stringify(actualType)) {
-            throw new Error(`Type mismatch in field ${fieldName}: expected ${JSON.stringify(expectedType)}, got ${JSON.stringify(actualType)}`);
-        }
-    
-        if (expr.constructor.name === "VariableReferenceContext" && !isBaseType(actualType) && !isRefType(actualType)) {
-            const varName = fieldExpr.identifier().IDENTIFIER().getText();
-            this.moveValue(env, varName);
-        }
-        }
-    
-        for (const fieldName in structType.fields) {
-        if (!initializedFields.has(fieldName)) {
-            throw new Error(`Field ${fieldName} is not initialized in struct ${typeName}`);
-        }
-        }
-    
-        return structType;
-    }
-    
-    // Handle enum variant instantiation
-    if (expr.constructor.name === "EnumStructInitContext") {
-        const enumName = expr.identifier(0).IDENTIFIER().getText();
-        const variantName = expr.identifier(1).IDENTIFIER().getText();
-    
-        const enumType = this.lookupType(env, enumName);
-        if (!isEnumType(enumType)) {
-        throw new Error(`${enumName} is not an enum`);
-        }
-    
-        const variantType = enumType.variants[variantName];
-        if (variantType === undefined) {
-        throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
-        }
-    
-        const variantExpr = expr.expression();
-        if (variantType !== null) {
-        if (!variantExpr) {
-            throw new Error(`Variant ${enumName}::${variantName} requires data`);
-        }
-    
-        const dataType = this.inferType(variantExpr, env);
-    
-        if (JSON.stringify(variantType) !== JSON.stringify(dataType)) {
-            throw new Error(`Type mismatch in enum variant: expected ${JSON.stringify(variantType)}, got ${JSON.stringify(dataType)}`);
-        }
-    
-        if (expr.constructor.name === "VariableReferenceContext" && !isBaseType(dataType) && !isRefType(dataType)) {
-            const varName = variantExpr.identifier().IDENTIFIER().getText();
-            this.moveValue(env, varName);
-        }
-        } else if (variantExpr) {
-        throw new Error(`Variant ${enumName}::${variantName} does not take data`);
-        }
-    
-        return enumType;
-    }
-    
-    // Handle field access
-    if (expr.constructor.name === "FieldAccessContext") {
-        const obj = expr.expression();
-        const fieldName = expr.identifier().IDENTIFIER().getText();
-        const objType = this.inferType(obj, env);
-    
-        if (isStructType(objType)) {
-        const fieldType = objType.fields[fieldName];
-        if (!fieldType) {
-            throw new Error(`Field ${fieldName} does not exist in struct ${objType.name}`);
-        }
-        return fieldType;
-        }
-    
-        if (isRefType(objType) && isStructType(objType.base)) {
-        const fieldType = objType.base.fields[fieldName];
-        if (!fieldType) {
-            throw new Error(`Field ${fieldName} does not exist in struct ${objType.base.name}`);
-        }
-        return this.createRefType(fieldType, objType.mutable);
-        }
-    
-        throw new Error(`Cannot access field ${fieldName} on non-struct type ${JSON.stringify(objType)}`);
-    }
-
-    // Handle enum variant access without data (e.g., Book::Papery)
-    if (expr.constructor.name === "EnumAccessContext") {
-        const enumName = expr.identifier(0).IDENTIFIER().getText();
-        const variantName = expr.identifier(1).IDENTIFIER().getText();
-    
-        const enumType = this.lookupType(env, enumName);
-        if (!isEnumType(enumType)) {
-        throw new Error(`${enumName} is not an enum`);
-        }
-    
-        const variantType = enumType.variants[variantName];
-        if (variantType === undefined) {
-        throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
-        }
-    
-        // If the variant has an associated type, accessing it like this is invalid.
-        if (variantType !== null) {
-        throw new Error(`Enum variant ${enumName}::${variantName} requires associated data`);
-        }
-    
-        return enumType;
-    }
-  
-    
-    // Handle match expressions
-    if (expr.constructor.name === "MatchExprContext") {
-        const scrutinee = expr.expression();
-        const scrutineeType = this.inferType(scrutinee, env);
-    
-        if (!isEnumType(scrutineeType)) {
-        throw new Error(`Match expression requires an enum type, got ${JSON.stringify(scrutineeType)}`);
-        }
-    
-        const arms = expr.match_arm();
-        const coveredVariants = new Set<string>();
-        const armTypes: Type[] = [];
-    
-        for (const arm of arms) {
-        const pattern = arm.match_pattern();
-        const [enumIdent, variantIdent, bindingIdent] = pattern.identifier();
-        const enumName = enumIdent.IDENTIFIER().getText();
-        const variantName = variantIdent.IDENTIFIER().getText();
-    
-        if (enumName !== scrutineeType.name) {
-            throw new Error(`Pattern refers to enum ${enumName}, but scrutinee is of type ${scrutineeType.name}`);
-        }
-    
-        const variantType = scrutineeType.variants[variantName];
-        if (variantType === undefined) {
-            throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
-        }
-    
-        if (coveredVariants.has(variantName)) {
-            throw new Error(`Duplicate pattern for variant ${variantName}`);
-        }
-        coveredVariants.add(variantName);
-    
-        this.enterScope();
-        if (bindingIdent && variantType !== null) {
-            const bindingName = bindingIdent.IDENTIFIER().getText();
-            this.assignType(env, bindingName, variantType);
-        }
-    
-        const armType = this.inferType(arm.expression(), env);
-        armTypes.push(armType);
-    
-        this.exitScope();
-        }
-    
-        for (const variant in scrutineeType.variants) {
-        if (!coveredVariants.has(variant)) {
-            throw new Error(`Match expression does not cover variant ${variant}`);
-        }
-        }
-    
-        const firstType = armTypes[0];
-        for (const t of armTypes) {
-        if (JSON.stringify(t) !== JSON.stringify(firstType)) {
-            throw new Error(`Match arms have different types: ${JSON.stringify(firstType)} and ${JSON.stringify(t)}`);
-        }
-        }
-    
-        return firstType;
-    }
-  
-    // Function calls
-    if (expr.constructor.name === "FunctionCallContext") {
-      const name = expr.identifier().IDENTIFIER().getText();
-      const fnType = builtInTypes[name] || this.lookupType(env, name);
-      console.log("fnType:", fnType);
-      
-      if (!isFnType(fnType)) {
-        throw new Error(`${name} is not callable`);
-      }
-      
-      const args = expr.argument_list()?.expression() || [];
-      const argTypes: Type[] = [];
-      
-      // Process each argument and handle moving/borrowing
-      for (let i = 0; i < args.length; i++) {
-        const argType = this.inferType(args[i], env);
-        argTypes.push(argType);
-        
-        // If passing a variable directly, check for move semantics
-        if (args[i].constructor.name === "VariableReferenceContext") {
-          const argName = args[i].identifier().IDENTIFIER().getText();
-          const paramType = fnType.params[i];
-          
-          // If parameter type is not a reference, we're moving the value
-          if (!isRefType(paramType) && !isBaseType(argType)) {
-            this.moveValue(env, argName);
-          }
-        }
-      }
-      
-      // Check argument count
-      if (argTypes.length !== fnType.params.length) {
-        throw new Error(`Function ${name} expects ${fnType.params.length} arguments, got ${argTypes.length}`);
-      }
-      
-      // Check argument types
-      for (let i = 0; i < argTypes.length; i++) {
-        const paramType = fnType.params[i];
-        const argType = argTypes[i];
-        
-        // Handle reference vs. value types differently
-        if (isRefType(paramType) && isRefType(argType)) {
-          // Reference compatibility
-          if (paramType.mutable && !argType.mutable) {
-            throw new Error(`Cannot pass immutable reference as mutable reference`);
-          }
-          
-          // Check base type compatibility
-          if (JSON.stringify(paramType.base) !== JSON.stringify(argType.base)) {
-            throw new Error(`Reference type mismatch: expected &${paramType.mutable ? 'mut ' : ''}${paramType.base}, got &${argType.mutable ? 'mut ' : ''}${argType.base}`);
-          }
-          
-          // Check lifetime validity
-          if (!this.isLifetimeValid(argType.lifetime)) {
-            throw new Error(`Reference passed to function has expired`);
-          }
-        } else if (!isRefType(paramType) && !isRefType(argType)) {
-          // Value type compatibility
-          if (JSON.stringify(paramType) !== JSON.stringify(argType)) {
-            throw new Error(`Type mismatch: expected ${paramType}, got ${argType}`);
-          }
-        } else {
-          throw new Error(`Cannot pass ${argType} as ${paramType}`);
-        }
-      }
-      
-      return fnType.return;
     }
     
     // If statements
@@ -940,6 +1066,7 @@ export class TypeChecker {
 
     throw new Error(`Unsupported expression type: ${expr.constructor.name}`);
   }
+
 
   inferBlockType(block: any, env: TypeEnv): Type {
     const statements = block.statement();
@@ -1045,7 +1172,9 @@ export class TypeChecker {
     if (returnTypes.length === 0) {
       const trailingExpr = body.expression();
       if (trailingExpr) {
+        // console.log("process here last expression")
         returnTypes.push(this.inferType(trailingExpr, env));
+        // console.log("returnTypes:", returnTypes)
       }
     }
   
