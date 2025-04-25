@@ -1,5 +1,5 @@
 yarn generate-parser
 # yarn build
 git add .
-git commit -m "check test cases" 
+git commit -m "clean enum" 
 git push origin compiler

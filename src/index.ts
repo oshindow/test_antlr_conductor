@@ -135,6 +135,15 @@ const input = `
 // }
 // counter; // should return 10 passed
 
+// enum Color {
+//     Red,
+//     Green,
+//     Blue,
+// }
+
+// let c = Color::Red; // Correct type annotation
+// c; // Accessing field of struct
+
 // failed cases
 // fn block_returns() -> number {
 //     let x = {
@@ -193,11 +202,20 @@ const input = `
 // } 
 // x; // Caught error: Unbound variable state: i
 
-// enum Color {
-//     Red,
-//     Green,
-//     Blue,
-// }
+
+
+enum Shape {
+    Circle { radius: number },
+    Rectangle { width: number, height: number },
+}
+
+let s = Shape::Rectangle { width: 10, height: 5 };
+// s;
+
+match s {
+    Shape::Circle { radius } => radius,
+    Shape::Rectangle { width, height } => width + height,
+};
 
 // struct Point {
 //     x: number,
@@ -209,9 +227,6 @@ const input = `
 //     width: number,
 //     height: number,
 // }
-
-// let c = Color::Red; // Correct type annotation
-// c; // Accessing field of struct
 `;
 
 const inputStream = CharStream.fromString(input);

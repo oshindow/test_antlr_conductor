@@ -189,7 +189,7 @@ export class TypeChecker {
   
   lookupType(env: TypeEnv, sym: string): Type {
     const state = this.lookupTypeState(env, sym);
-    console.log("state", state, "sym", sym)
+    // console.log("state", state, "sym", sym)
     // Check if the value has been moved
     if (state.ownership.kind === "moved") {
       throw new Error(`Use of moved value: ${sym}`);
@@ -363,7 +363,7 @@ export class TypeChecker {
     const enumType = this.createEnumType(name, variants);
     console.log(enumType, variants)
     this.assignType(env, name, enumType);
-    console.log("end assignType", env, env[0][name])
+    // console.log("end assignType", env, env[0][name])
   }
 
   // Register a struct definition in the environment
@@ -716,40 +716,47 @@ export class TypeChecker {
 
           // Handle enum variant instantiation
           if (op.constructor.name === "EnumStructInitContext") {
-            console.log("infered EnumStructInitContext")
-            const enumName = op.identifier(0).IDENTIFIER().getText();
-            const variantName = op.identifier(1).IDENTIFIER().getText();
-        
-            const enumType = this.lookupType(env, enumName);
+            // console.log("infered EnumStructInitContext")
+            // const enumName = op.identifier(0).IDENTIFIER().getText();
+            const variantName = op.identifier().IDENTIFIER().getText();
+            // console.log(name,variantName)
+            const enumType = this.lookupType(env, name);
             if (!isEnumType(enumType)) {
-            throw new Error(`${enumName} is not an enum`);
+            throw new Error(`${name} is not an enum`);
             }
         
             const variantType = enumType.variants[variantName];
             if (variantType === undefined) {
-            throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+            throw new Error(`Variant ${variantName} does not exist in enum ${name}`);
             }
         
-            const variantExpr = op.expression();
+            // const variantExpr = op.field_init_list();
+            const variantExpr = op.field_init_list().field_init() ?? [];
+            // console.log(variantExpr)
             if (variantType !== null) {
-            if (!variantExpr) {
-                throw new Error(`Variant ${enumName}::${variantName} requires data`);
-            }
-        
-            const dataType = this.inferType(variantExpr, env);
-        
-            if (JSON.stringify(variantType) !== JSON.stringify(dataType)) {
-                throw new Error(`Type mismatch in enum variant: expected ${JSON.stringify(variantType)}, got ${JSON.stringify(dataType)}`);
-            }
-        
-            if (op.constructor.name === "VariableReferenceContext" && !isBaseType(dataType) && !isRefType(dataType)) {
-                const varName = variantExpr.identifier().IDENTIFIER().getText();
-                this.moveValue(env, varName);
-            }
+                if (!variantExpr) {
+                    throw new Error(`Variant ${name}::${variantName} requires data`);
+                }
+                for (const fieldInit of variantExpr) {
+                    const fieldName = fieldInit.identifier().IDENTIFIER().getText();
+                    const expr = fieldInit.expression();
+                    const dataType = this.inferType(expr, env);
+                    
+                    const expectedType = variantType.fields[fieldName];
+                    // console.log(expectedType)
+                    if (JSON.stringify(expectedType) !== JSON.stringify(dataType)) {
+                        throw new Error(`Type mismatch in enum variant: expected ${JSON.stringify(variantType)}, got ${JSON.stringify(dataType)}`);
+                    }
+                
+                    if (op.constructor.name === "VariableReferenceContext" && !isBaseType(dataType) && !isRefType(dataType)) {
+                        const varName = expr.identifier().IDENTIFIER().getText();
+                        this.moveValue(env, varName);
+                    }
+              }
             } else if (variantExpr) {
-            throw new Error(`Variant ${enumName}::${variantName} does not take data`);
+                throw new Error(`Variant ${name}::${variantName} does not take data`);
             }
-        
+            // console.log(end)
             return enumType;
         }
         }
@@ -839,6 +846,7 @@ export class TypeChecker {
 
     // Handle match expressions
     if (expr.constructor.name === "MatchExprContext") {
+      console.log("call matchexpr")
       const scrutinee = expr.expression();
       const scrutineeType = this.inferType(scrutinee, env);
   
@@ -846,40 +854,50 @@ export class TypeChecker {
       throw new Error(`Match expression requires an enum type, got ${JSON.stringify(scrutineeType)}`);
       }
   
-      const arms = expr.match_arm();
+      const arms = expr.match_arm_list()?.match_arm() ?? [];
+
       const coveredVariants = new Set<string>();
       const armTypes: Type[] = [];
   
       for (const arm of arms) {
-      const pattern = arm.match_pattern();
-      const [enumIdent, variantIdent, bindingIdent] = pattern.identifier();
-      const enumName = enumIdent.IDENTIFIER().getText();
-      const variantName = variantIdent.IDENTIFIER().getText();
-  
-      if (enumName !== scrutineeType.name) {
-          throw new Error(`Pattern refers to enum ${enumName}, but scrutinee is of type ${scrutineeType.name}`);
-      }
-  
-      const variantType = scrutineeType.variants[variantName];
-      if (variantType === undefined) {
-          throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
-      }
-  
-      if (coveredVariants.has(variantName)) {
-          throw new Error(`Duplicate pattern for variant ${variantName}`);
-      }
-      coveredVariants.add(variantName);
-  
-      this.enterScope();
-      if (bindingIdent && variantType !== null) {
-          const bindingName = bindingIdent.IDENTIFIER().getText();
-          this.assignType(env, bindingName, variantType);
-      }
-  
-      const armType = this.inferType(arm.expression(), env);
-      armTypes.push(armType);
-  
-      this.exitScope();
+          const pattern = arm.match_pattern();
+          const [enumIdent, variantIdent, bindingIdent] = pattern.identifier();
+          const enumName = enumIdent.IDENTIFIER().getText();
+          const variantName = variantIdent.IDENTIFIER().getText();
+      
+          if (enumName !== scrutineeType.name) {
+              throw new Error(`Pattern refers to enum ${enumName}, but scrutinee is of type ${scrutineeType.name}`);
+          }
+      
+          const variantType = scrutineeType.variants[variantName];
+          if (variantType === undefined) {
+              throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+          }
+      
+          if (coveredVariants.has(variantName)) {
+              throw new Error(`Duplicate pattern for variant ${variantName}`);
+          }
+          coveredVariants.add(variantName);
+      
+          this.enterScope();
+          if (bindingIdent && variantType !== null) {
+              const bindingName = bindingIdent.IDENTIFIER().getText();
+              console.log(bindingName)
+              if (isStructType(variantType)) {
+                for (const fieldName in variantType.fields) {
+                  const fieldType = variantType.fields[fieldName];
+                  this.assignType(env, fieldName, fieldType);  
+                }
+              } else {
+                this.assignType(env, bindingName, variantType); 
+              }
+          }
+          console.log("call here start infertype arm.expression")
+          const armType = this.inferType(arm.expression(), env);
+          console.log("end arm.expression")
+          armTypes.push(armType);
+      
+          this.exitScope();
       }
   
       for (const variant in scrutineeType.variants) {

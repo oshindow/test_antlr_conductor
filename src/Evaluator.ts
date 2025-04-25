@@ -26,7 +26,10 @@ export type Instruction =
   | { tag: 'DEREF' } 
   | { tag: 'DECL', sym: string, mutable: boolean }
   | { tag: 'DEREF_ASSIGN' } 
-  | { tag: 'SETFIELD' }; // New instruction for field assignment
+  | { tag: 'SETFIELD' }
+  | { tag: 'ENUM_STRUCT'}
+  | { tag: 'ENUM_CONSTRUCT', enumName: string, variantName: string}
+  | { tag: 'ENUM_SETFIELD', sym: string}; 
 
 interface ThreadContext {
   pc: number; // program counter
@@ -294,6 +297,44 @@ export class ConcurrentEvaluator {
             this.activeThread.stack.push(obj);
             console.log("SETFIELD: operand stack:", this.activeThread!.stack, "runtime stack:", this.activeThread!.rts, "env:", this.activeThread!.env);
             
+            this.advance();
+            break;
+          }
+          case 'ENUM_STRUCT': {
+            // Push a fresh struct object (as the payload) onto the stack
+            this.activeThread.stack.push({});
+            this.advance();
+            console.log("ENUM_STRUCT: operand stack:", this.activeThread.stack);
+            break;
+          }
+          case 'ENUM_SETFIELD': {
+            const value = this.activeThread.stack.pop();
+            const obj = this.activeThread.stack.pop();
+            if (typeof obj !== 'object' || obj === null) {
+              throw new Error('ENUM_SETFIELD expects a struct object on the stack');
+            }
+          
+            obj[instr.sym] = value;
+            this.activeThread.stack.push(obj);
+            console.log("ENUM_SETFIELD:", instr.sym, '=', value);
+            this.advance();
+            break;
+          }
+          case 'ENUM_CONSTRUCT': {
+            const payload = this.activeThread.stack.pop();
+          
+            if (typeof payload !== 'object' || payload === null) {
+              throw new Error('ENUM_CONSTRUCT expects a struct payload object');
+            }
+          
+            const enumVal = {
+              __enum: instr.enumName,
+              tag: instr.variantName,
+              payload: payload
+            };
+          
+            this.activeThread.stack.push(enumVal);
+            console.log("ENUM_CONSTRUCT:", enumVal);
             this.advance();
             break;
           }

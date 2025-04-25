@@ -80,7 +80,10 @@ export type Instruction =
   | { tag: 'DEREF' }
   | { tag: 'DEREF_ASSIGN' }
   | { tag: 'DECL'; sym: string, mutable: boolean }
-  | { tag: 'SETFIELD' };
+  | { tag: 'SETFIELD' }
+  | { tag: 'ENUM_STRUCT'}
+  | { tag: 'ENUM_CONSTRUCT', enumName: string, variantName: string}
+  | { tag: 'ENUM_SETFIELD', sym: string}; 
 
   function isType(t: any): boolean {
     if (t === undefined || typeof t === "string") return true;
@@ -242,7 +245,7 @@ export class CompileVisitor
       this.visit(ctx.expression());
       this.instrs.push({ tag: 'RESET' });
   }
-
+  
   visitBlock(ctx: BlockContext): void {
       const statements = ctx.statement();
       const expr = ctx.expression();
@@ -323,9 +326,9 @@ visitLet_stmt(ctx: Let_stmtContext): void {
     }
 
     if (ctx.expression()) {
-      console.log("start inferType")
+      // console.log("start inferType")
         const inferredType = this.inferType(ctx.expression(), this.typeEnv);
-        console.log("inferredType", inferredType)
+        // console.log("inferredType", inferredType)
         if (declaredType && declaredType !== inferredType) {
             throw new Error(`Type mismatch in let: expected ${declaredType}, got ${inferredType}`);
         }
@@ -381,6 +384,70 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
     }
 }
 
+visitMatchExpr(ctx: MatchExprContext) {
+  console.log("call matchexpr")
+  this.visit(ctx.expression()); // compile the value to match against
+  const arms = ctx.match_arm_list()?.match_arm() ?? [];
+  const endJumps: Instruction[] = [];
+
+  for (const arm of arms) {
+    const pattern = arm.children?.[0];
+    
+    this.instrs.push({ tag: 'ENTER_SCOPE', syms: [] });
+
+    // Duplicate the value to match so we can compare without consuming it
+    this.instrs.push({ tag: 'LD', sym: '__match_val' }); // Pseudo: assumes value is in `__match_val`
+    this.visitPattern(pattern); // pattern will push value to match against
+
+    const jofInstr: Instruction = { tag: 'JOF', addr: -1 }; // skip if not matching
+    this.instrs.push(jofInstr);
+
+    // Match succeeded
+    this.visit(arm.expression()); // compile the arm body
+    const gotoEnd: Instruction = { tag: 'GOTO', addr: -1 }; // skip other arms
+    this.instrs.push(gotoEnd);
+    endJumps.push(gotoEnd);
+
+    jofInstr.addr = this.instrs.length; // if no match, jump here
+
+    this.instrs.push({ tag: 'EXIT_SCOPE' });
+  }
+
+  for (const jmp of endJumps) {
+    if (jmp.tag === 'GOTO' || jmp.tag === 'JOF') {
+        jmp.addr = this.instrs.length;
+    }
+  }
+  this.instrs.push({ tag: 'POP' }); // pop the matched value
+}
+
+visitPattern(pattern: any) {
+  if (pattern instanceof VariableReferenceContext) {
+    const name = pattern.identifier().getText();
+    // Save the matched value into the variable
+    this.instrs.push({ tag: 'ASSIGN', sym: name });
+    this.instrs.push({ tag: 'LDC', val: true }); // Always match
+  } else if (pattern instanceof Postfix_exprContext) {
+    const op = pattern.postfix_op();
+    const name = pattern.primary_expr().getText();
+    if (op instanceof EnumAccessContext) {
+        // const enumName = pattern.identifier(0).getText();
+        const variantName = op.identifier().getText();
+
+        // Compare the enum tag
+        this.instrs.push({ tag: 'LDC', val: { __enum: name, tag: variantName } });
+        this.instrs.push({ tag: 'BINOP', sym: '==' }); // Check if it matches
+    } else if (op instanceof FieldAccessContext) {
+      const fieldName = op.identifier().getText();
+      this.instrs.push({ tag: 'LDC', val: fieldName });
+      this.instrs.push({ tag: 'GETFIELD' });
+      this.instrs.push({ tag: 'LDC', val: true }); // Assume field always exists
+    } else {
+      throw new Error("Unsupported pattern type");
+    }
+  }
+}
+ 
   visitExpression_stmt(ctx: Expression_stmtContext): void {
       this.visit(ctx.expression());
   }
@@ -417,9 +484,12 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
   }
 
   visitVariableReference(ctx: VariableReferenceContext): void {
-    console.log("call visitVariableReference")
+    // console.log("call visitVariableReference")
       const type = this.inferType(ctx, this.typeEnv);
       const name = ctx.identifier().IDENTIFIER().getText();
+      if (typeof type === "object" && type !== null && type.kind === "enum")
+        return
+     
       this.instrs.push({ tag: 'LD', sym: name });
       // console.log("finsh visitVariableReference")
   }
@@ -507,13 +577,15 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
         variants[variantName] = null; // no associated data
   
       } else if (variant instanceof StructVariantContext) {
+        // console.log("enum struct variant")
         const variantName = variant.identifier().getText();
         const fieldTypes: Record<string, Type> = {};
   
         const fields = variant.field_list()?.field_decl() ?? [];
+        // console.log(fields)
         for (const field of fields) {
           const fieldName = field.identifier().getText();
-          const fieldType = this.structDefs[variantName].fields[fieldName];
+          const fieldType = field.ty().getText();
           fieldTypes[fieldName] = fieldType;
         }
   
@@ -535,7 +607,7 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
     this.enumDefs[name] = enumType;
     this.assignType(this.typeEnv, name, enumType);
     this.registerEnum(this.typeEnv, name, variants); // <- type check and env update
-    console.log("enumDefs:", this.enumDefs);
+    // console.log("enumDefs:", this.enumDefs);
   }
   
   // visitEnumAccess(ctx: EnumAccessContext): void {
@@ -802,7 +874,7 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
 
         } else if (op instanceof EnumAccessContext) {
             // a::B
-            console.log("call visitEnumAccess")
+            // console.log("call visitEnumAccess")
             const variant = op.identifier().getText();   // e.g., B
             this.instrs.push({ tag: 'LDC', val: { __enum: name, tag: variant } });
 
@@ -821,20 +893,27 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
 
         } else if (op instanceof EnumStructInitContext) {
             // a::B { field1: val1, field2: val2 }
-            console.log("call visitEnumStructInit")
-            const variant = op.identifier().getText();
-            const fields = op.field_init_list()?.field_init() ?? [];
-
-            const val: any = { __enum: name, tag: variant };
-            for (const field of fields) {
-                const key = field.identifier().getText();
-                this.visit(field.expression());
-                this.instrs.push({ tag: 'ASSIGN', sym: key });
-                this.instrs.push({ tag: 'POP' });
-            }
-
-            this.instrs.push({ tag: 'LDC', val });
-        }
+ 
+              const variant = op.identifier().getText();
+              const fields = op.field_init_list()?.field_init() ?? [];
+          
+               
+              this.instrs.push({ tag: 'ENUM_STRUCT' });   
+          
+              for (const field of fields) {
+                  const key = field.identifier().getText();
+                  this.visit(field.expression()); // evaluate value
+                  this.instrs.push({ tag: 'ENUM_SETFIELD', sym: key }); // payload.field = value
+              }
+          
+              this.instrs.push({
+                  tag: 'ENUM_CONSTRUCT',
+                  enumName: name,
+                  variantName: variant
+              });
+          }
+          
+        // }
     }
 }
   
