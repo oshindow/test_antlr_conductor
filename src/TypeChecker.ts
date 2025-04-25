@@ -357,38 +357,21 @@ export class TypeChecker {
   }
 
   // Register an enum definition in the environment
-  registerEnum(env: TypeEnv, enumCtx: any): void {
-    const name = enumCtx.identifier().IDENTIFIER().getText();
-    const variants: {[variant: string]: Type | null} = {};
-    
-    // Process each variant
-    const variantCtxs = enumCtx.enum_variant();
-    for (const variantCtx of variantCtxs) {
-      const variantName = variantCtx.identifier().IDENTIFIER().getText();
-      
-      // Check for duplicate variant names
-      if (variants[variantName]) {
-        throw new Error(`Duplicate variant name ${variantName} in enum ${name}`);
-      }
-      
-      // Handle variants with data
-      if (variantCtx.ty()) {
-        variants[variantName] = this.parseTypeAnnotation(variantCtx.ty(), env);
-      } else {
-        variants[variantName] = null; // Simple variant without data
-      }
-    }
+  registerEnum(env: TypeEnv, name:string, variants: any): void {
+ 
     
     const enumType = this.createEnumType(name, variants);
+    console.log(enumType, variants)
     this.assignType(env, name, enumType);
+    console.log("end assignType", env, env[0][name])
   }
 
   // Register a struct definition in the environment
   registerStruct(env: TypeEnv, name: string, fields: any): void {
     const structType = this.createStructType(name, fields);
-    console.log("structType", structType)
+    // console.log("structType", structType)
     this.assignType(env, name, structType);
-    console.log("end assignType", env)
+    // console.log("end assignType", env)
   }
 
   parseTypeAnnotation(tyCtx: any, env: TypeEnv): Type {
@@ -709,22 +692,23 @@ export class TypeChecker {
 
           // Handle enum variant access without data (e.g., Book::Papery)
           if (op.constructor.name === "EnumAccessContext") {
-              const enumName = op.identifier(0).IDENTIFIER().getText();
-              const variantName = op.identifier(1).IDENTIFIER().getText();
-          
-              const enumType = this.lookupType(env, enumName);
+              // console.log("call enumAccesss")
+              // const enumName = op.identifier(0).IDENTIFIER().getText();
+              const variantName = op.identifier().IDENTIFIER().getText();
+              
+              const enumType = this.lookupType(env, name);
               if (!isEnumType(enumType)) {
-              throw new Error(`${enumName} is not an enum`);
+              throw new Error(`${name} is not an enum`);
               }
           
               const variantType = enumType.variants[variantName];
               if (variantType === undefined) {
-              throw new Error(`Variant ${variantName} does not exist in enum ${enumName}`);
+              throw new Error(`Variant ${variantName} does not exist in enum ${name}`);
               }
           
               // If the variant has an associated type, accessing it like this is invalid.
               if (variantType !== null) {
-              throw new Error(`Enum variant ${enumName}::${variantName} requires associated data`);
+              throw new Error(`Enum variant ${name}::${variantName} requires associated data`);
               }
           
               return enumType;
@@ -732,6 +716,7 @@ export class TypeChecker {
 
           // Handle enum variant instantiation
           if (op.constructor.name === "EnumStructInitContext") {
+            console.log("infered EnumStructInitContext")
             const enumName = op.identifier(0).IDENTIFIER().getText();
             const variantName = op.identifier(1).IDENTIFIER().getText();
         

@@ -5,6 +5,8 @@ import {
   // AddContext,
   // NumberContext,
   // ParenExprContext,
+  SimpleVariantContext,
+  StructVariantContext,
   StructInitContext,
   Expression_stmtContext,
   Function_declContext,
@@ -17,6 +19,7 @@ import {
   StatementContext,
   VariableReferenceContext,
   FieldAccessContext,
+  Enum_declContext,
   EnumAccessContext,
   EnumStructInitContext,
   MatchExprContext,
@@ -406,9 +409,9 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
         this.visitWhileExpr(ctx.while_stmt()!);
       } else if (ctx.for_stmt()) {
         this.visitForExpr(ctx.for_stmt()!);
-      } else if (ctx.struct_decl){
+      } else if (ctx.struct_decl()){
         this.visitStructDecl(ctx.struct_decl()!);
-      } else if (ctx.enum_decl){
+      } else if (ctx.enum_decl()){
         this.visitEnumDecl(ctx.enum_decl()!);
       }
   }
@@ -475,26 +478,65 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
     
     const obj: Record<string, any> = { __struct: typeName };
     this.instrs.push({ tag: 'LDC', val: obj });
-    // this.instrs.push({ tag: 'DECL', sym: '__temp_struct__', mutable: true });
-    // this.instrs.push({ tag: 'ASSIGN', sym: '__temp_struct__' });
+
     for (const field of fields) {
-      // console.log("field", field)
+ 
       const fieldName = field.identifier().getText();
-      // console.log("fieldName", fieldName)
+       
       if (!(fieldName in this.structDefs[typeName].fields)) {
         throw new Error(`Unknown field '${fieldName}' in struct '${typeName}'`);
       }
   
-      // leave a copy of struct on stack
-      // this.instrs.push({ tag: 'LD', sym: '__temp_struct__' });  // or DUP if you implement
       this.instrs.push({ tag: 'LDC', val: fieldName });
       this.visit(field.expression());
       this.instrs.push({ tag: 'SETFIELD' });
     }
-    // this.instrs.push({ tag: 'LD', sym: '__temp_struct__' });
-  
+    
   }
   
+  visitEnumDecl(ctx: Enum_declContext): void {
+    // console.log("call visitEnumDecl")
+    const name = ctx.identifier().IDENTIFIER().getText();
+    const variants: Record<string, Type | null> = {};
+  
+    const variantList = ctx.variant_list()?.variant() ?? [];
+  
+    for (const variant of variantList) {
+      if (variant instanceof SimpleVariantContext) {
+        const variantName = variant.identifier().getText();
+        variants[variantName] = null; // no associated data
+  
+      } else if (variant instanceof StructVariantContext) {
+        const variantName = variant.identifier().getText();
+        const fieldTypes: Record<string, Type> = {};
+  
+        const fields = variant.field_list()?.field_decl() ?? [];
+        for (const field of fields) {
+          const fieldName = field.identifier().getText();
+          const fieldType = this.structDefs[variantName].fields[fieldName];
+          fieldTypes[fieldName] = fieldType;
+        }
+  
+        const structType: StructType = {
+          kind: "struct",
+          name: `${name}::${variantName}`,
+          fields: fieldTypes
+        };
+        variants[variantName] = structType;
+      }
+    }
+  
+    const enumType: EnumType = {
+      kind: "enum",
+      name,
+      variants
+    };
+  
+    this.enumDefs[name] = enumType;
+    this.assignType(this.typeEnv, name, enumType);
+    this.registerEnum(this.typeEnv, name, variants); // <- type check and env update
+    console.log("enumDefs:", this.enumDefs);
+  }
   
   // visitEnumAccess(ctx: EnumAccessContext): void {
   //   const enumName = ctx.identifier(0).getText(); // Book
@@ -533,6 +575,10 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
   registerStruct(env: TypeEnv, name: string, fieldTypes: any): void {
     // Delegate struct registration to the external TypeChecker
     typeChecker.registerStruct(env, name, fieldTypes);
+  }
+  registerEnum(env: TypeEnv, name: string, fieldTypes: any): void {
+    // Delegate struct registration to the external TypeChecker
+    typeChecker.registerEnum(env, name, fieldTypes);
   }
   inferFunctionBodyType(body: BlockContext, env: TypeEnv): Type {
     // Delegate function body type inference to the external TypeChecker
@@ -756,7 +802,7 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
 
         } else if (op instanceof EnumAccessContext) {
             // a::B
-            // const enumName = op.identifier(0).getText();  // e.g., a
+            console.log("call visitEnumAccess")
             const variant = op.identifier().getText();   // e.g., B
             this.instrs.push({ tag: 'LDC', val: { __enum: name, tag: variant } });
 
@@ -775,7 +821,7 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
 
         } else if (op instanceof EnumStructInitContext) {
             // a::B { field1: val1, field2: val2 }
-            // const enumName = op.identifier(0).getText();
+            console.log("call visitEnumStructInit")
             const variant = op.identifier().getText();
             const fields = op.field_init_list()?.field_init() ?? [];
 
@@ -791,9 +837,5 @@ visitAssign_stmt(ctx: Assign_stmtContext): any {
         }
     }
 }
-
-  
-  
-  
   
 }
